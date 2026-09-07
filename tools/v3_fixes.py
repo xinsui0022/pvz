@@ -1,5 +1,7 @@
 """V3 hooks for the supplied 1.0.0.1051 binary (100 logic ticks/second)."""
 
+BOSS_LAST_STAND = 0x31505a49
+
 
 def add_v3(emit, patch, asm):
     # Init picks a complete bungee target. Skip the mod's later cone-X copy.
@@ -146,7 +148,53 @@ def add_v3(emit, patch, asm):
     ''')
     patch(0x523632, asm(f'jmp {boss_health}', 0x523632), 6)
 
-    boss_enter = emit('izombie_boss_head_baseline', '''
+    # The serialized baseline slot also marks a living boss left at 1 HP by
+    # the penalty. Native lethal body damage clamps HP to 1 as a death signal.
+    boss_alive = emit('izombie_boss_death_check', f'''
+        cmp dword ptr [edi+0xc8], 1
+        jne done
+        push eax
+        mov eax, dword ptr [edi]
+        cmp dword ptr [eax+0x7f8], 61
+        jb original
+        cmp dword ptr [eax+0x7f8], 70
+        ja original
+        cmp dword ptr [edi+0x154], {BOSS_LAST_STAND}
+        jne original
+        pop eax
+        cmp dword ptr [edi+0xc8], 0
+        ret
+    original:
+        pop eax
+        cmp dword ptr [edi+0xc8], 1
+    done:
+        ret
+    ''')
+    for site in (0x536242, 0x536516):
+        patch(site, asm(f'call {boss_alive}', site), 7)
+
+    boss_damage = emit('izombie_boss_actual_damage', '''
+        pushfd
+        pushad
+        cmp dword ptr [ebp+0x24], 25
+        jne done
+        cmp dword ptr [esp+0x44], 0
+        jle done
+        mov eax, dword ptr [ebp]
+        cmp dword ptr [eax+0x7f8], 61
+        jb done
+        cmp dword ptr [eax+0x7f8], 70
+        ja done
+        mov dword ptr [ebp+0x154], 0
+    done:
+        popad
+        popfd
+        mov dword ptr [ebp+0xc8], edi
+        jmp 0x53131f
+    ''')
+    patch(0x531319, asm(f'jmp {boss_damage}', 0x531319), 6)
+
+    boss_enter = emit('izombie_boss_head_baseline', f'''
         mov dword ptr [edi+0x13c], eax
         pushfd
         pushad
@@ -155,6 +203,11 @@ def add_v3(emit, patch, asm):
         test al, al
         jz done
         mov eax, dword ptr [edi+0xc8]
+        cmp eax, 1
+        jne record
+        cmp dword ptr [edi+0x154], {BOSS_LAST_STAND}
+        je done
+    record:
         mov dword ptr [edi+0x154], eax
     done:
         popad
@@ -163,9 +216,9 @@ def add_v3(emit, patch, asm):
     ''')
     patch(0x5353cf, asm(f'jmp {boss_enter}', 0x5353cf), 6)
 
-    # Fifty ticks before HEAD_IDLE_AFTER_SPIT ends, use the native 1-HP
-    # death path if this head cycle has taken no damage.
-    boss_check = emit('izombie_boss_head_min_damage', '''
+    # Apply the penalty 50 ticks before raising the head. All three native
+    # death checks must distinguish this living 1 HP from lethal damage.
+    boss_check = emit('izombie_boss_head_min_damage', f'''
         pushfd
         pushad
         mov eax, dword ptr [edi]
@@ -180,10 +233,11 @@ def add_v3(emit, patch, asm):
         cmp eax, dword ptr [edi+0x154]
         jne done
         mov dword ptr [edi+0xc8], 1
+        mov dword ptr [edi+0x154], {BOSS_LAST_STAND}
     done:
         popad
         popfd
-        cmp dword ptr [edi+0xc8], 1
+        call {boss_alive}
         jmp 0x5365fc
     ''')
     patch(0x5365f5, asm(f'jmp {boss_check}', 0x5365f5), 7)

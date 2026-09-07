@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "f2086cb46837c33837287af16fb66d1194849ea39f724a86d8141da46c5f5f68",
+  "patched_sha256": "2efffb2bad8b29eae2b8dcc1090a2d6239b80b1d93a21b83cd79ab0b4a4a9fd9",
   "symbols": {
     "boss_die": "0x794000",
     "is_final_boss": "0x794060",
@@ -44,15 +44,17 @@
     "squash_brain_aim_527db2": "0x794a70",
     "izombie_yeti_forward": "0x794ab0",
     "izombie_boss_health": "0x794af0",
-    "izombie_boss_head_baseline": "0x794b20",
-    "izombie_boss_head_min_damage": "0x794b50",
-    "izombie_pause_no_dialog": "0x794b90",
-    "izombie_pause_toggle": "0x794bd0",
-    "izombie_pause_can_pick": "0x794c00",
-    "izombie_pause_mouse_down": "0x794c40",
-    "izombie_queue_capacity": "0x794c80",
-    "izombie_queue_placement": "0x794cd0",
-    "izombie_pause_update": "0x794d40"
+    "izombie_boss_death_check": "0x794b20",
+    "izombie_boss_actual_damage": "0x794b60",
+    "izombie_boss_head_baseline": "0x794ba0",
+    "izombie_boss_head_min_damage": "0x794be0",
+    "izombie_pause_no_dialog": "0x794c30",
+    "izombie_pause_toggle": "0x794c70",
+    "izombie_pause_can_pick": "0x794ca0",
+    "izombie_pause_mouse_down": "0x794ce0",
+    "izombie_queue_capacity": "0x794d20",
+    "izombie_queue_placement": "0x794d70",
+    "izombie_pause_update": "0x794de0"
   },
   "hooks": [
     {
@@ -204,6 +206,18 @@
       "length": 6
     },
     {
+      "va": "0x536242",
+      "length": 7
+    },
+    {
+      "va": "0x536516",
+      "length": 7
+    },
+    {
+      "va": "0x531319",
+      "length": 6
+    },
+    {
       "va": "0x5353cf",
       "length": 6
     },
@@ -244,5 +258,5 @@
       "length": 72
     }
   ],
-  "code_bytes": 3547
+  "code_bytes": 3707
 }
