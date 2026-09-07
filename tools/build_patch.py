@@ -16,6 +16,8 @@ sys.path.insert(0, str(ROOT / '.tools'))
 import pefile
 from keystone import Ks, KS_ARCH_X86, KS_MODE_32
 from additional_fixes import add_fixes
+from progression_fixes import add_progression
+from multi_boss_fixes import add_multi_boss
 
 ORIGINAL_SHA256 = '343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb'
 BASE = 0x400000
@@ -221,6 +223,8 @@ def build(original):
     patch(0x535d48, asm(f'jmp {fireball}', 0x535d48), 7)
 
     add_fixes(emit, patch, asm, symbols)
+    add_progression(emit, patch, asm)
+    add_multi_boss(emit, patch, asm)
 
     # Existing footer buffer: GBK, NUL-terminated, 71 bytes plus terminator.
     # Reuse the same pointer/layout; pad the unused tail with NUL bytes.

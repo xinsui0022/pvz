@@ -11,6 +11,9 @@ ROOT=Path(__file__).resolve().parents[1]
 PREVIOUS_VERSIONS={
     'b4c9028cd6cef84f56e3f6f492e17a6f711aa843f67abb83c7dd6461eb5e97a7':'v1',
     'fbba03d861134204ba82cbf37a8ff8faa689fea41cdce8408b6453cba2469c70':'v2',
+    '72cc5c3b9a808a0452c6e87fa853b9d51932b9b9ae84177491ef42f9dffd41ef':'v3',
+    '33e35a24d2286a2282eb26b7b32f6f3923bb7134066af5f78d33fc2f54750993':'v4',
+    'adab8b74e105e1593df72434574f455a609195406cae00d48d972f542d88eb16':'v5-broken',
 }
 PARTNER_HASHES={
     'partner.xml':'4e7ff623b419e36feb578eaccb5e80b838290b01c2d2ae282a0648cecbd80290',
