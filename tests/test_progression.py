@@ -32,6 +32,9 @@ class ProgressionTests(unittest.TestCase):
         return vm
 
     def complete(self,vm):
+        balance=vm.r(BOARD+0x5560)
+        vm.coin_stub()
+        event_start=len(vm.events)
         vm.reg(UC_X86_REG_ESP,STACK)
         for i, reg in enumerate(REGS): vm.reg(reg,0x123400+i)
         vm.reg(UC_X86_REG_ECX,CHALLENGE)
@@ -41,30 +44,28 @@ class ProgressionTests(unittest.TestCase):
         self.assertEqual(vm.reg(UC_X86_REG_EDI),before[UC_X86_REG_EAX])
         for reg in REGS:
             if reg!=UC_X86_REG_EDI: self.assertEqual(vm.reg(reg),before[reg])
+        self.assertEqual(vm.r(BOARD+0x5560),balance)
+        return sum(1 for event in vm.events[event_start:] if event[0] == 'sun')
 
     def test_rewards_stage_boundaries_stacking_and_reentry(self):
         for stage, milestone in [(1,0),(2,0),(3,100),(9,100),(10,500),(29,0),(30,600),(60,600)]:
             for plants,clear in [([21],100),([21,46],100),([],100),([21,1],0),([13],0),([27],0)]:
                 with self.subTest(stage=stage,plants=plants):
                     vm=self.reward_vm(stage,plants)
-                    self.complete(vm)
-                    self.assertEqual(vm.r(BOARD+0x5560),milestone+clear)
-                    self.complete(vm)
-                    self.assertEqual(vm.r(BOARD+0x5560),milestone+clear)
+                    coins=self.complete(vm)
+                    self.assertEqual(coins*25,milestone+clear)
+                    self.assertEqual(self.complete(vm),0)
                     # A serialized ledger copy into a fresh VM also prevents payment.
                     loaded=self.reward_vm(stage,plants)
                     loaded.w(CHALLENGE+0x70,vm.r(CHALLENGE+0x70))
-                    self.complete(loaded)
-                    self.assertEqual(loaded.r(BOARD+0x5560),0)
+                    self.assertEqual(self.complete(loaded),0)
 
     def test_reward_mode_score_dead_and_next_stage(self):
         for mode,score in [(0,5),(60,5),(70,4)]:
-            vm=self.reward_vm(30,[21],mode,score);self.complete(vm)
-            self.assertEqual(vm.r(BOARD+0x5560),0)
+            vm=self.reward_vm(30,[21],mode,score);self.assertEqual(self.complete(vm),0)
         vm=self.reward_vm(2,[1]);vm.u.mem_write(PLANT+0x141,b'\1')
-        self.complete(vm);self.assertEqual(vm.r(BOARD+0x5560),100)
-        vm.w(CHALLENGE+0x6c,2);self.complete(vm)
-        self.assertEqual(vm.r(BOARD+0x5560),300)
+        self.assertEqual(self.complete(vm),4)
+        vm.w(CHALLENGE+0x6c,2);self.assertEqual(self.complete(vm),8)
 
     def test_original_transition_restored_and_stage_incremented(self):
         old,new=pefile.PE(data=ORIGINAL),pefile.PE(data=PATCHED)

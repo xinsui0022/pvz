@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "0a11af528160c6f79ad75bb27aceed006ff74f5c3e2e0303af945a36ecafe4e5",
+  "patched_sha256": "f2086cb46837c33837287af16fb66d1194849ea39f724a86d8141da46c5f5f68",
   "symbols": {
     "boss_die": "0x794000",
     "is_final_boss": "0x794060",
@@ -23,18 +23,36 @@
     "dolphin_ride_edge": "0x7944c0",
     "weighted_random": "0x7944f0",
     "weak_health_roll": "0x794520",
-    "completion_rewards": "0x7945c0",
-    "boss_item_back_leg": "0x794680",
-    "boss_item_front_leg": "0x7946a0",
-    "boss_item_main": "0x7946c0",
-    "boss_item_arm": "0x7946e0",
-    "boss_item_ball": "0x794700",
-    "boss_item_resolve": "0x794720",
-    "boss_part_decode": "0x794770",
-    "boss_distinct_draw": "0x794780",
-    "chomper_rear_digger": "0x794830",
-    "bungee_alternating_price": "0x794880",
-    "bungee_purchase_complete": "0x7948d0"
+    "completion_reward_coins": "0x7945e0",
+    "completion_rewards": "0x794610",
+    "boss_item_back_leg": "0x7946d0",
+    "boss_item_front_leg": "0x7946f0",
+    "boss_item_main": "0x794710",
+    "boss_item_arm": "0x794730",
+    "boss_item_ball": "0x794750",
+    "boss_item_resolve": "0x794770",
+    "boss_part_decode": "0x7947c0",
+    "boss_distinct_draw": "0x7947d0",
+    "chomper_rear_digger": "0x794880",
+    "bungee_alternating_price": "0x7948d0",
+    "bungee_purchase_complete": "0x794920",
+    "random_bungee_target": "0x794960",
+    "izombie_ice_trail": "0x794990",
+    "squash_head_brain": "0x7949d0",
+    "squash_head_brain_impact": "0x794a00",
+    "squash_brain_aim_527c26": "0x794a30",
+    "squash_brain_aim_527db2": "0x794a70",
+    "izombie_yeti_forward": "0x794ab0",
+    "izombie_boss_health": "0x794af0",
+    "izombie_boss_head_baseline": "0x794b20",
+    "izombie_boss_head_min_damage": "0x794b50",
+    "izombie_pause_no_dialog": "0x794b90",
+    "izombie_pause_toggle": "0x794bd0",
+    "izombie_pause_can_pick": "0x794c00",
+    "izombie_pause_mouse_down": "0x794c40",
+    "izombie_queue_capacity": "0x794c80",
+    "izombie_queue_placement": "0x794cd0",
+    "izombie_pause_update": "0x794d40"
   },
   "hooks": [
     {
@@ -154,9 +172,77 @@
       "length": 9
     },
     {
+      "va": "0x651171",
+      "length": 6
+    },
+    {
+      "va": "0x52a8af",
+      "length": 11
+    },
+    {
+      "va": "0x42b98f",
+      "length": 7
+    },
+    {
+      "va": "0x527e2e",
+      "length": 5
+    },
+    {
+      "va": "0x527c26",
+      "length": 9
+    },
+    {
+      "va": "0x527db2",
+      "length": 6
+    },
+    {
+      "va": "0x52a8e0",
+      "length": 7
+    },
+    {
+      "va": "0x523632",
+      "length": 6
+    },
+    {
+      "va": "0x5353cf",
+      "length": 6
+    },
+    {
+      "va": "0x5365f5",
+      "length": 7
+    },
+    {
+      "va": "0x4502c0",
+      "length": 6
+    },
+    {
+      "va": "0x41b8ec",
+      "length": 5
+    },
+    {
+      "va": "0x488506",
+      "length": 9
+    },
+    {
+      "va": "0x412225",
+      "length": 16
+    },
+    {
+      "va": "0x42a3bd",
+      "length": 10
+    },
+    {
+      "va": "0x42a0f0",
+      "length": 6
+    },
+    {
+      "va": "0x415df0",
+      "length": 9
+    },
+    {
       "va": "0x65124a",
       "length": 72
     }
   ],
-  "code_bytes": 2308
+  "code_bytes": 3547
 }

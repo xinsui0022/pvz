@@ -19,6 +19,7 @@ from additional_fixes import add_fixes
 from progression_fixes import add_progression
 from multi_boss_fixes import add_multi_boss
 from tactical_fixes import add_tactical
+from v3_fixes import add_v3
 
 ORIGINAL_SHA256 = '343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb'
 BASE = 0x400000
@@ -227,6 +228,7 @@ def build(original):
     add_progression(emit, patch, asm)
     add_multi_boss(emit, patch, asm)
     add_tactical(emit, patch, asm)
+    add_v3(emit, patch, asm)
 
     # Existing footer buffer: GBK, NUL-terminated, 71 bytes plus terminator.
     # Reuse the same pointer/layout; pad the unused tail with NUL bytes.

@@ -1,5 +1,7 @@
 """I, Zombie health and completion rewards, with verified x86 hook ABIs."""
-WEAK_TYPES = (0, 1, 5, 6, 9, 10, 11, 14, 16, 17, 18, 24)
+# Low-health random results get the more forgiving 65/25/4/3/3 roll.  The
+# three head-only zombie cards use the same distribution as the V2 set.
+WEAK_TYPES = (0, 1, 5, 6, 9, 10, 11, 14, 16, 17, 18, 24, 26, 29, 30)
 HEALTH_WEIGHTS = (65, 25, 4, 3, 3)
 
 def add_progression(emit, patch, asm):
@@ -14,6 +16,10 @@ def add_progression(emit, patch, asm):
         test al, al
         jz original
         mov edx, dword ptr [ebx+0x24]
+        cmp edx, 12
+        je full
+        cmp edx, 22
+        je full
         {checks}
     original:
         mov eax, 5
@@ -52,7 +58,34 @@ def add_progression(emit, patch, asm):
     # Caller has pushed the NEW zombie. EBX still refers to the dead cone.
     patch(0x651180, asm(f'call {health}', 0x651180))
 
-    reward = emit('completion_rewards', '''
+    coin_drop = emit('completion_reward_coins', '''
+        # EAX=Board*, ECX=amount.  One sun coin is 25, so all three reward
+        # sources remain exact while the player still has to pick them up.
+        pushfd
+        pushad
+        mov ebp, eax
+        mov esi, ecx
+        xor edi, edi
+    coin:
+        cmp esi, 25
+        jb done
+        push 2
+        push 4
+        push 300
+        lea eax, [edi+300]
+        push eax
+        mov ecx, ebp
+        call 0x40cb10
+        add edi, 12
+        sub esi, 25
+        jmp coin
+    done:
+        popad
+        popfd
+        ret
+    ''')
+
+    reward = emit('completion_rewards', f'''
         pushfd
         pushad
         sub esp, 4
@@ -111,7 +144,7 @@ def add_progression(emit, patch, asm):
         jz done
         mov eax, dword ptr [ebp+4]
         mov ecx, edi
-        call 0x41b960
+        call {coin_drop}
     done:
         add esp, 4
         popad

@@ -85,8 +85,9 @@ class VM:
         def f(vm):
             sp=vm.reg(UC_X86_REG_ESP)
             assert vm.reg(UC_X86_REG_ECX)==BOARD
-            assert [vm.r(sp+i) for i in (12,16)]==[4,2]
-            vm.events.append(('sun',vm.r(sp+4),vm.r(sp+8)))
+            assert vm.r(sp+12)==4
+            assert vm.r(sp+16)==2
+            vm.events.append(('sun',vm.r(sp+4),vm.r(sp+8),vm.r(sp+16)))
             # Adversarial volatile-register clobbers, as a real callee may do.
             vm.reg(UC_X86_REG_ECX,0xaaaa)
             vm.reg(UC_X86_REG_EDX,0xbbbb)
