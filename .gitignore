@@ -1,0 +1,12 @@
+# Only patch source, tests and documentation belong in this repository.
+/*
+!/.gitignore
+!/README.md
+!/requirements.txt
+!/tools/
+!/tests/
+!/docs/
+!/patches/
+__pycache__/
+*.pyc
+/docs/local-*

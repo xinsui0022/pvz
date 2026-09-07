@@ -1,0 +1,93 @@
+{
+  "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
+  "patched_sha256": "fbba03d861134204ba82cbf37a8ff8faa689fea41cdce8408b6453cba2469c70",
+  "symbols": {
+    "boss_die": "0x794000",
+    "is_final_boss": "0x794060",
+    "jack_sun": "0x794090",
+    "water_brain_gate": "0x7940d0",
+    "fireball_brain": "0x794120",
+    "projectile_damage": "0x794190",
+    "basketball_sun": "0x794240",
+    "pea_damage": "0x794250",
+    "jalapeno_sun": "0x794270",
+    "squish_brain_in_row": "0x794280",
+    "jalapeno_brain": "0x7942b0",
+    "pogo_brain": "0x7942e0",
+    "pogo_height_gate": "0x794320",
+    "aquatic_mode": "0x794330",
+    "dolphin_update": "0x794460",
+    "snorkel_update": "0x794470",
+    "snorkel_pool_edge": "0x794480",
+    "dolphin_swim_edge": "0x7944a0",
+    "dolphin_ride_edge": "0x7944c0",
+    "weighted_random": "0x7944f0"
+  },
+  "hooks": [
+    {
+      "va": "0x651213",
+      "length": 5
+    },
+    {
+      "va": "0x4539d0",
+      "length": 7
+    },
+    {
+      "va": "0x41cc39",
+      "length": 5
+    },
+    {
+      "va": "0x52f522",
+      "length": 6
+    },
+    {
+      "va": "0x535d48",
+      "length": 7
+    },
+    {
+      "va": "0x46d7a6",
+      "length": 6
+    },
+    {
+      "va": "0x46cfeb",
+      "length": 6
+    },
+    {
+      "va": "0x527729",
+      "length": 5
+    },
+    {
+      "va": "0x527740",
+      "length": 5
+    },
+    {
+      "va": "0x5254e2",
+      "length": 10
+    },
+    {
+      "va": "0x5261e0",
+      "length": 6
+    },
+    {
+      "va": "0x526720",
+      "length": 5
+    },
+    {
+      "va": "0x52695d",
+      "length": 6
+    },
+    {
+      "va": "0x5266b9",
+      "length": 6
+    },
+    {
+      "va": "0x5263e4",
+      "length": 6
+    },
+    {
+      "va": "0x6510e9",
+      "length": 5
+    }
+  ],
+  "code_bytes": 1312
+}
