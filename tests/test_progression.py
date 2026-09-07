@@ -11,7 +11,7 @@ class ProgressionTests(unittest.TestCase):
         pe=pefile.PE(data=ORIGINAL)
         dis=Cs(CS_ARCH_X86,CS_MODE_32)
         sites={0x651180,0x429980,0x4167a8,0x4167d1,0x4167f4,0x416815,
-               0x416867,0x41711a,0x41713c,0x417150}
+               0x416867,0x41711a,0x41713c,0x417150,0x4676ea,0x467b00,0x42a42a}
         for hook in MANIFEST['hooks']:
             va=int(hook['va'],16);size=hook['length']
             if va not in sites: continue  # New trampolines that replay overwritten code.

@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "59448d170de8dc92da5300ca6934add241a96b972a404775ab8a314796bf8447",
+  "patched_sha256": "0a11af528160c6f79ad75bb27aceed006ff74f5c3e2e0303af945a36ecafe4e5",
   "symbols": {
     "boss_die": "0x794000",
     "is_final_boss": "0x794060",
@@ -31,7 +31,10 @@
     "boss_item_ball": "0x794700",
     "boss_item_resolve": "0x794720",
     "boss_part_decode": "0x794770",
-    "boss_distinct_draw": "0x794780"
+    "boss_distinct_draw": "0x794780",
+    "chomper_rear_digger": "0x794830",
+    "bungee_alternating_price": "0x794880",
+    "bungee_purchase_complete": "0x7948d0"
   },
   "hooks": [
     {
@@ -139,9 +142,21 @@
       "length": 5
     },
     {
+      "va": "0x4676ea",
+      "length": 6
+    },
+    {
+      "va": "0x467b00",
+      "length": 6
+    },
+    {
+      "va": "0x42a42a",
+      "length": 9
+    },
+    {
       "va": "0x65124a",
       "length": 72
     }
   ],
-  "code_bytes": 2082
+  "code_bytes": 2308
 }
