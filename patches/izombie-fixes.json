@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "fbba03d861134204ba82cbf37a8ff8faa689fea41cdce8408b6453cba2469c70",
+  "patched_sha256": "72cc5c3b9a808a0452c6e87fa853b9d51932b9b9ae84177491ef42f9dffd41ef",
   "original_size": 3007800,
   "patched_size": 3014656,
   "changes": [
@@ -22,7 +22,7 @@
     {
       "offset": 336,
       "before": "PGc=",
-      "after": "ZaM="
+      "after": "kqA="
     },
     {
       "offset": 401,
@@ -153,6 +153,11 @@
       "offset": 2429459,
       "before": "YIsB6LU=",
       "after": "6egtFAA="
+    },
+    {
+      "offset": 2429514,
+      "before": "y+a7+r2pyqyw5iBCWTpCaWxpQmlsaSDK5bahu/lf764gIMPit9G4xLDmIL371rm1ucL0ICC4xLDmUVHIujo5MzM4NTE4NjE=",
+      "after": "08nQxLa87OHL6cHLzOG5qaOsUVGjujMzODkxNDEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
     },
     {
       "offset": 3007800,

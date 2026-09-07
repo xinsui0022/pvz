@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "fbba03d861134204ba82cbf37a8ff8faa689fea41cdce8408b6453cba2469c70",
+  "patched_sha256": "72cc5c3b9a808a0452c6e87fa853b9d51932b9b9ae84177491ef42f9dffd41ef",
   "symbols": {
     "boss_die": "0x794000",
     "is_final_boss": "0x794060",
@@ -87,6 +87,10 @@
     {
       "va": "0x6510e9",
       "length": 5
+    },
+    {
+      "va": "0x65124a",
+      "length": 72
     }
   ],
   "code_bytes": 1312

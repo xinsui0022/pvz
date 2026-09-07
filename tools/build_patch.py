@@ -222,6 +222,12 @@ def build(original):
 
     add_fixes(emit, patch, asm, symbols)
 
+    # Existing footer buffer: GBK, NUL-terminated, 71 bytes plus terminator.
+    # Reuse the same pointer/layout; pad the unused tail with NUL bytes.
+    caption = '由心都灬碎了提供，QQ：3389141'.encode('gbk')
+    assert len(caption) < 72
+    patch(0x65124a, caption + b'\0' * (72-len(caption)))
+
     # Explicit executable section, rather than depending on unmapped padding.
     header = pe.sections[-1].get_file_offset() + 40
     assert header + 40 <= pe.OPTIONAL_HEADER.SizeOfHeaders

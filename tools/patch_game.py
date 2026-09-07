@@ -8,7 +8,10 @@ import struct
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-V1_SHA256='b4c9028cd6cef84f56e3f6f492e17a6f711aa843f67abb83c7dd6461eb5e97a7'
+PREVIOUS_VERSIONS={
+    'b4c9028cd6cef84f56e3f6f492e17a6f711aa843f67abb83c7dd6461eb5e97a7':'v1',
+    'fbba03d861134204ba82cbf37a8ff8faa689fea41cdce8408b6453cba2469c70':'v2',
+}
 PARTNER_HASHES={
     'partner.xml':'4e7ff623b419e36feb578eaccb5e80b838290b01c2d2ae282a0648cecbd80290',
     'partner.xml.sig':'ca5b57ce55e4c7dac8086656e7b63c41d56e1cc98a6208391f6fbfa800887537'}
@@ -99,12 +102,13 @@ def main():
     if digest(data)==wanted:
         partner_files(args.game.parent,args.restore,check=args.check)
         print('Already in requested state:',digest(data)); return
-    upgrading=not args.restore and digest(data)==V1_SHA256
+    previous=PREVIOUS_VERSIONS.get(digest(data))
+    upgrading=not args.restore and previous is not None
     source=(args.game.parent/'backups/PlantsVsZombies.original.exe').read_bytes() if upgrading else data
     result=transform(source,package,args.restore)
     if args.check:
         print('Compatible; output SHA-256:',digest(result)); return
-    backup=args.game.parent/'backups'/('PlantsVsZombies.v1.exe' if upgrading else 'PlantsVsZombies.before-restore.exe' if args.restore else 'PlantsVsZombies.original.exe')
+    backup=args.game.parent/'backups'/(f'PlantsVsZombies.{previous}.exe' if upgrading else 'PlantsVsZombies.before-restore.exe' if args.restore else 'PlantsVsZombies.original.exe')
     backup.parent.mkdir(exist_ok=True)
     if backup.exists() and backup.read_bytes()!=data:
         raise ValueError('Existing backup differs. Refusing to overwrite it.')
