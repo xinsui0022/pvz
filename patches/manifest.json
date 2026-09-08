@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "2efffb2bad8b29eae2b8dcc1090a2d6239b80b1d93a21b83cd79ab0b4a4a9fd9",
+  "patched_sha256": "d923f47620cdb90aee55f98404d0fb40063f7179fbe1e0d45ec12c23e37484b2",
   "symbols": {
     "boss_die": "0x794000",
     "is_final_boss": "0x794060",
