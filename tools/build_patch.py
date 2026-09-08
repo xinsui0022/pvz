@@ -224,6 +224,23 @@ def build(original):
     ''')
     patch(0x535d48, asm(f'jmp {fireball}', 0x535d48), 7)
 
+    # Only the boss ball call site changes. CrushPlantsInSquare receives
+    # (column, row, ignoreSpikeweed); its separate Spikerock exclusion stays.
+    ball_crush = emit('boss_ball_crush', '''
+        pushfd
+        pushad
+        mov eax, dword ptr [edi]
+        call 0x4537d0
+        test al, al
+        jz done
+        mov dword ptr [esp+48], 0
+    done:
+        popad
+        popfd
+        jmp 0x52e920
+    ''')
+    patch(0x535d43, asm(f'call {ball_crush}', 0x535d43))
+
     add_fixes(emit, patch, asm, symbols)
     add_progression(emit, patch, asm)
     add_multi_boss(emit, patch, asm)
