@@ -344,6 +344,49 @@ class PauseTests(unittest.TestCase):
             self.assertEqual(vm.r(CHALLENGE+0xc),count+int(success))
             self.assertEqual(vm.r(CHALLENGE+0xb8),int(success))
 
+    def test_repeat_same_paused_card_runs_payment_queue_and_was_planted(self):
+        for seed in (74,66):
+            vm=self.base()
+            packet=APP+0x8028
+            vm.w(0x6a9ec0,APP)
+            vm.w(BOARD+0x138,APP+0x9000)
+            vm.w(APP+0x9028,seed)
+            vm.w(BOARD+0x144,APP+0x8000)
+            vm.w(packet,APP);vm.w(packet+4,BOARD)
+            vm.w(packet+0x34,seed);vm.w(packet+0x38,0xffffffff)
+            vm.w(BOARD+0x5560,500)
+            vm.stub(0x41b980,'count_sun',eax=0)
+            vm.stub(0x40cab0,'advice')
+            vm.stub(0x41d7d0,'allowed',eax=1)
+            for n in range(3):
+                # Mouse selection deactivates the packet before placement.
+                vm.u.mem_write(packet+0x48,b'\0')
+                vm.reg(UC_X86_REG_ESP,STACK)
+                vm.w(STACK+0x58,2);vm.w(STACK+0x60,4)
+                vm.reg(UC_X86_REG_EBP,CHALLENGE)
+                vm.reg(UC_X86_REG_ESI,BOARD)
+                vm.run(0x42a3bd,0x42a44b)
+                self.assertEqual(vm.reg(UC_X86_REG_ESP),STACK)
+                self.assertEqual(vm.r(CHALLENGE+0xc),n+1)
+                self.assertEqual(vm.r(packet+0x4c),n+1)
+                self.assertEqual(bytes(vm.u.mem_read(packet+0x48,2)),b'\1\0')
+                vm.reg(UC_X86_REG_ESP,STACK);vm.w(STACK,STOP)
+                vm.reg(UC_X86_REG_ESI,packet)
+                vm.run(0x488500)
+                self.assertEqual(vm.reg(UC_X86_REG_EAX)&255,1)
+            self.assertEqual(vm.r(BOARD+0x5560),250 if seed==66 else 350)
+
+    def test_packet_release_keeps_unpaused_and_other_modes_refreshing(self):
+        for mode,paused in ((70,False),(0,True),(71,True)):
+            vm=self.base(mode,paused)
+            packet=APP+0x8028
+            vm.w(packet,APP);vm.w(packet+4,BOARD);vm.w(packet+0x34,61)
+            vm.reg(UC_X86_REG_EAX,packet)
+            vm.run(0x42a446,0x42a44b)
+            self.assertEqual(vm.reg(UC_X86_REG_ESP),STACK)
+            self.assertEqual(vm.r(packet+0x4c),1)
+            self.assertEqual(bytes(vm.u.mem_read(packet+0x48,2)),b'\0\1')
+
 
 if __name__ == '__main__':
     unittest.main()

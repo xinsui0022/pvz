@@ -252,6 +252,34 @@ QUEUE_CAPACITY = 27
 
 
 def add_pause(emit, patch, asm):
+    release = emit('iz_pause_release_used_packet', '''
+        push ebx
+        mov ebx, eax
+        call 0x488ec0
+        pushfd
+        pushad
+        mov eax, dword ptr [ebx]
+        call 0x4537d0
+        test al, al
+        jz done
+        mov eax, dword ptr [ebx+4]
+        cmp byte ptr [eax+0x164], 0
+        je done
+        cmp dword ptr [ebx+0x28], 0
+        jne done
+        mov dword ptr [ebx+0x24], 0
+        mov byte ptr [ebx+0x49], 0
+        mov byte ptr [ebx+0x48], 1
+    done:
+        popad
+        popfd
+        pop ebx
+        ret
+    ''')
+    # Only the successful IZ purchase call site. Run WasPlanted first to
+    # retain usage accounting, then complete its zero-duration refresh.
+    patch(0x42a446, asm(f'call {release}', 0x42a446), 5)
+
     pause = emit('izombie_pause_no_dialog', '''
         cmp dword ptr [ecx+0x7f8], 61
         jb original

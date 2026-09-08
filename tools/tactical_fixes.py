@@ -31,6 +31,26 @@ def add_tactical(emit, patch, asm):
     # a bite. EDI=plant; ESI=zombie; all original targeting outside this gate.
     patch(0x4676ea, asm(f'jmp {digger}', 0x4676ea), 6)
 
+    dancer = emit('chomper_dancer_normal_reach', '''
+        pushad
+        cmp dword ptr [esi+0x24], 8
+        jne original
+        mov eax, dword ptr [edi]
+        call 0x4537d0
+        test al, al
+        jz original
+        popad
+        jmp 0x467731
+    original:
+        popad
+        mov dword ptr [esp+0x14], 60
+        jmp 0x467731
+    ''')
+    # A bite begun on a backup dancer must not inherit the extra 60 pixels
+    # when reacquiring its leader after the backup dies. Keep normal reach
+    # and every original damage/phase/row check for the leader.
+    patch(0x467729, asm(f'jmp {dancer}', 0x467729), 8)
+
     price = emit('bungee_alternating_price', '''
         mov ecx, dword ptr [0x6a9ec0]
         cmp eax, 66

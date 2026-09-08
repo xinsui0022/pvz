@@ -74,11 +74,11 @@ class TacticalTests(unittest.TestCase):
             self.assertEqual('spawn' in v.events,success)
             self.assertEqual(v.r(BOARD+0x5560),0 if success else money)
 
-    def target(self,binary=PATCHED,mode=70,phase=33,col=0,x=0,plant=6,kind=17,biting=True):
+    def target(self,binary=PATCHED,mode=70,phase=33,col=0,x=0,plant=6,kind=17,biting=True,gap=None,eating=True):
         v=VM(binary,mode)
         v.w(BOARD+0x90,ZOMBIE);v.w(BOARD+0x94,1)
         v.w(ZOMBIE+0x158,0x10000);v.w(ZOMBIE+0x24,kind);v.w(ZOMBIE+0x28,phase)
-        v.w(ZOMBIE+8,x);v.w(ZOMBIE+0x1c,0);v.u.mem_write(ZOMBIE+0x51,b'\1')
+        v.w(ZOMBIE+8,x);v.w(ZOMBIE+0x1c,0);v.u.mem_write(ZOMBIE+0x51,bytes([eating]))
         v.w(PLANT+0x24,plant);v.w(PLANT+0x28,col);v.w(PLANT+8,40)
         v.w(PLANT+0x3c,10 if biting else 0)
         v.stub(0x45eb10,'damage_flags',pop=4,eax=1)
@@ -91,10 +91,10 @@ class TacticalTests(unittest.TestCase):
         v.stub(0x531a80,'damageable',pop=4,eax=1)
         def zr(v):
             p=v.reg(UC_X86_REG_EDI)
-            for off,value in [(0,80),(4,0),(8,100),(12,100)]:v.w(p+off,value)
+            for off,value in [(0,80 if gap is None else 160+gap),(4,0),(8,100),(12,100)]:v.w(p+off,value)
             v.ret()
         v.stubs[0x5320b0]=zr
-        v.stub(0x41c820,'overlap',eax=0)
+        if gap is None:v.stub(0x41c820,'overlap',eax=0)
         v.w(STACK+4,PLANT);v.w(STACK+8,0);v.reg(UC_X86_REG_ECX,0)
         v.run(0x4675c0)
         self.assertEqual(v.reg(UC_X86_REG_ESP),STACK+12)
@@ -110,5 +110,18 @@ class TacticalTests(unittest.TestCase):
     def test_digger_protection_is_local_to_rear_chomper_and_iz(self):
         for kwargs in [dict(col=1),dict(x=81),dict(phase=0),dict(mode=0),dict(kind=0),dict(plant=0)]:
             self.assertEqual(self.target(**kwargs),ZOMBIE,kwargs)
+
+    def test_dancer_cannot_inherit_dead_backups_extended_bite_range(self):
+        # Real rectangle-overlap code: mouth ends at x=160; the leader
+        # stands beyond it. Old bite reacquisition admits a 60-pixel gap.
+        for gap in (1,30,60):
+            self.assertEqual(self.target(ORIGINAL,kind=8,phase=43,gap=gap,eating=False),ZOMBIE)
+            for phase in range(40,51):
+                self.assertEqual(self.target(kind=8,phase=phase,gap=gap,eating=False),0)
+        for gap in (-20,0):
+            self.assertEqual(self.target(kind=8,phase=43,gap=gap),ZOMBIE)
+        for kind,mode in ((9,70),(0,70),(8,0),(8,71)):
+            self.assertEqual(self.target(kind=kind,mode=mode,gap=30),ZOMBIE)
+        self.assertEqual(self.target(kind=8,gap=30,biting=False,eating=True),0)
 
 if __name__=='__main__':unittest.main()
