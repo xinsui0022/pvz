@@ -1,7 +1,7 @@
 """I, Zombie health and completion rewards, with verified x86 hook ABIs."""
-# Low-health random results get the more forgiving 65/25/4/3/3 roll.  The
-# three head-only zombie cards use the same distribution as the V2 set.
-WEAK_TYPES = (0, 1, 5, 6, 9, 10, 11, 14, 16, 17, 18, 24, 26, 29, 30)
+# Low-health random results get the more forgiving 65/25/4/3/3 roll.
+# V4 also includes dancing and bungee zombies, only on random conversion.
+WEAK_TYPES = (0, 1, 5, 6, 8, 9, 10, 11, 14, 16, 17, 18, 20, 24, 26, 29, 30)
 HEALTH_WEIGHTS = (65, 25, 4, 3, 3)
 
 def add_progression(emit, patch, asm):

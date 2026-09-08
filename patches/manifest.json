@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "9d1598c89cf7613e02b2d327781dcccc1cd9bbe1673dc252a4af719a9bc5d031",
+  "patched_sha256": "7e48f0f3db6bd4aaa9258a58595dd43f0b8933916785871bf78a6219498d497a",
   "symbols": {
     "boss_die": "0x794000",
     "is_final_boss": "0x794060",
@@ -24,40 +24,46 @@
     "dolphin_ride_edge": "0x7944e0",
     "weighted_random": "0x794510",
     "weak_health_roll": "0x794540",
-    "completion_reward_coins": "0x794600",
-    "completion_rewards": "0x794630",
-    "boss_item_back_leg": "0x7946f0",
-    "boss_item_front_leg": "0x794710",
-    "boss_item_main": "0x794730",
-    "boss_item_arm": "0x794750",
-    "boss_item_ball": "0x794770",
-    "boss_item_resolve": "0x794790",
-    "boss_part_decode": "0x7947e0",
-    "boss_distinct_draw": "0x7947f0",
-    "chomper_rear_digger": "0x7948a0",
-    "chomper_dancer_normal_reach": "0x7948f0",
-    "bungee_alternating_price": "0x794920",
-    "bungee_purchase_complete": "0x794970",
-    "random_bungee_target": "0x7949b0",
-    "izombie_ice_trail": "0x7949e0",
-    "squash_head_brain": "0x794a20",
-    "squash_head_brain_impact": "0x794a50",
-    "squash_brain_aim_527c26": "0x794a80",
-    "squash_brain_aim_527db2": "0x794ac0",
-    "izombie_yeti_forward": "0x794b00",
-    "izombie_boss_health": "0x794b40",
-    "izombie_boss_death_check": "0x794b70",
-    "izombie_boss_actual_damage": "0x794bb0",
-    "izombie_boss_head_baseline": "0x794bf0",
-    "izombie_boss_head_min_damage": "0x794c30",
-    "iz_pause_release_used_packet": "0x794c80",
-    "izombie_pause_no_dialog": "0x794cc0",
-    "izombie_pause_toggle": "0x794d00",
-    "izombie_pause_can_pick": "0x794d30",
-    "izombie_pause_mouse_down": "0x794d70",
-    "izombie_queue_capacity": "0x794db0",
-    "izombie_queue_placement": "0x794e00",
-    "izombie_pause_update": "0x794e70"
+    "completion_reward_coins": "0x794610",
+    "completion_rewards": "0x794640",
+    "boss_item_back_leg": "0x794700",
+    "boss_item_front_leg": "0x794720",
+    "boss_item_main": "0x794740",
+    "boss_item_arm": "0x794760",
+    "boss_item_ball": "0x794780",
+    "boss_item_resolve": "0x7947a0",
+    "boss_part_decode": "0x7947f0",
+    "boss_distinct_draw": "0x794800",
+    "chomper_rear_digger": "0x7948b0",
+    "chomper_dancer_normal_reach": "0x794900",
+    "bungee_alternating_price": "0x794930",
+    "bungee_purchase_complete": "0x794980",
+    "random_bungee_target": "0x7949c0",
+    "izombie_ice_trail": "0x7949f0",
+    "squash_head_brain": "0x794a30",
+    "squash_head_brain_impact": "0x794a60",
+    "squash_brain_aim_527c26": "0x794a90",
+    "squash_brain_aim_527db2": "0x794ad0",
+    "izombie_yeti_forward": "0x794b10",
+    "izombie_boss_health": "0x794b50",
+    "izombie_boss_death_check": "0x794b80",
+    "izombie_boss_actual_damage": "0x794bc0",
+    "izombie_boss_head_baseline": "0x794c00",
+    "izombie_boss_head_min_damage": "0x794c40",
+    "iz_pause_release_used_packet": "0x794c90",
+    "izombie_pause_no_dialog": "0x794cd0",
+    "izombie_pause_toggle": "0x794d10",
+    "izombie_pause_can_pick": "0x794d40",
+    "izombie_pause_mouse_down": "0x794d80",
+    "izombie_queue_capacity": "0x794dc0",
+    "izombie_queue_placement": "0x794e10",
+    "izombie_pause_update": "0x794e80",
+    "jack_early_roll": "0x794f20",
+    "jack_blast_brains": "0x794f50",
+    "dancer_live_lookup": "0x795010",
+    "dancer_native_walk": "0x795040",
+    "dancer_team_walk": "0x795050",
+    "dancer_spawn_alignment": "0x795200"
   },
   "hooks": [
     {
@@ -269,9 +275,25 @@
       "length": 9
     },
     {
+      "va": "0x522fe8",
+      "length": 5
+    },
+    {
+      "va": "0x526c7f",
+      "length": 5
+    },
+    {
+      "va": "0x52aa40",
+      "length": 5
+    },
+    {
+      "va": "0x528a17",
+      "length": 5
+    },
+    {
       "va": "0x65124a",
       "length": 72
     }
   ],
-  "code_bytes": 3851
+  "code_bytes": 4697
 }
