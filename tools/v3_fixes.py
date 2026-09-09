@@ -232,7 +232,20 @@ def add_v3(emit, patch, asm):
         jle done
         cmp eax, dword ptr [edi+0x154]
         jne done
-        mov dword ptr [edi+0xc8], 1
+        # Use native body damage to cross the visual damage thresholds too.
+        # Preserve the caller's live floating-point state around particles.
+        mov ebp, esp
+        sub esp, 528
+        and esp, -16
+        fxsave [esp]
+        fninit
+        dec eax
+        push 8
+        push eax
+        push edi
+        call 0x5312d0
+        fxrstor [esp]
+        mov esp, ebp
         mov dword ptr [edi+0x154], {BOSS_LAST_STAND}
     done:
         popad

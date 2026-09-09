@@ -153,6 +153,28 @@ def add_v4(emit, patch, asm):
         jb membership
         jmp original
     leader:
+        # Older saves can retain the leader's follower ID after ApplyButter
+        # cleared only the follower's backlink. Repair only that exact orphan.
+        xor edi, edi
+    repair_link:
+        mov edx, dword ptr [esi+4]
+        mov ecx, dword ptr [esi+edi*4+0xf4]
+        call {live}
+        test eax, eax
+        jz next_link
+        cmp dword ptr [eax+0x24], 9
+        jne next_link
+        cmp dword ptr [eax+0xf0], 0
+        jne next_link
+        mov dl, byte ptr [esi+0xb8]
+        cmp byte ptr [eax+0xb8], dl
+        jne next_link
+        mov edx, dword ptr [esi+0x158]
+        mov dword ptr [eax+0xf0], edx
+    next_link:
+        inc edi
+        cmp edi, 4
+        jb repair_link
         mov ebp, esp
         sub esp, 528
         and esp, -16

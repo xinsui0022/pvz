@@ -185,11 +185,12 @@ class V3Tests(unittest.TestCase):
         self.assertEqual(vm.reg(UC_X86_REG_ESP), STACK+16)
 
     def test_boss_no_damage_only_at_half_second_boundary(self):
+        from test_boss_survival import BossSurvivalTests
         for mode, hp, baseline, ticks, expected in (
                 (70,500,500,51,500),(70,500,500,50,1),(70,500,500,49,500),
                 (61,400,400,50,1),(70,499,500,50,499),(0,500,500,50,500),
                 (70,1,500,50,1),(70,500,0,50,500)):
-            vm = VM(mode=mode)
+            vm = BossSurvivalTests().boss(mode=mode)
             vm.reg(UC_X86_REG_EDI, ZOMBIE)
             vm.w(ZOMBIE+0xc8, hp)
             vm.w(ZOMBIE+0x154, baseline)

@@ -1,7 +1,7 @@
 """I, Zombie health and completion rewards, with verified x86 hook ABIs."""
 # Low-health random results get the more forgiving 65/25/4/3/3 roll.
 # V4 also includes dancing and bungee zombies, only on random conversion.
-WEAK_TYPES = (0, 1, 5, 6, 8, 9, 10, 11, 14, 16, 17, 18, 20, 24, 26, 29, 30)
+WEAK_TYPES = (0, 1, 5, 6, 8, 9, 10, 11, 14, 15, 16, 17, 18, 20, 24, 26, 29, 30, 31)
 HEALTH_WEIGHTS = (65, 25, 4, 3, 3)
 
 def add_progression(emit, patch, asm):
@@ -85,7 +85,7 @@ def add_progression(emit, patch, asm):
         ret
     ''')
 
-    reward = emit('completion_rewards', f'''
+    reward_only = emit('completion_reward_once', f'''
         pushfd
         pushad
         sub esp, 4
@@ -149,6 +149,10 @@ def add_progression(emit, patch, asm):
         add esp, 4
         popad
         popfd
+        ret
+    ''')
+    reward = emit('completion_rewards', f'''
+        call {reward_only}
         push ebx
         push ebp
         push esi
@@ -159,3 +163,4 @@ def add_progression(emit, patch, asm):
     # PuzzlePhaseComplete: ECX=Challenge; EAX=grid X. Preserve whole prologue.
     # +0x70 is the serialized slot-machine roll count, unused in I, Zombie.
     patch(0x429980, asm(f'jmp {reward}', 0x429980), 6)
+    return reward_only

@@ -31,7 +31,9 @@ class BossSurvivalTests(unittest.TestCase):
         vm.stub(0x528b00, 'animation', pop=16)
         vm.stub(0x536b00, 'smoke', pop=4)
         vm.stub(0x5af400, 'rng', eax=0)
-        vm.stub(0x52d710, 'damage_index', eax=2)
+        vm.stub(0x473490, 'damage_image', pop=4)
+        vm.stub(0x453c80, 'damage_particle', pop=8)
+        vm.stub(0x453630, 'damage_sound')
         vm.stub(0x535440, 'spit')
         for address, pop in ((0x535fb0, 0), (0x533240, 4)):
             def die(v, pop=pop):

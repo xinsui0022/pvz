@@ -21,6 +21,8 @@ from multi_boss_fixes import add_multi_boss
 from tactical_fixes import add_tactical
 from v3_fixes import add_v3
 from v4_fixes import add_v4
+from v4_1_fixes import add_v4_1
+from v4_2_fixes import add_v4_2
 
 ORIGINAL_SHA256 = '343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb'
 BASE = 0x400000
@@ -243,11 +245,13 @@ def build(original):
     patch(0x535d43, asm(f'call {ball_crush}', 0x535d43))
 
     add_fixes(emit, patch, asm, symbols)
-    add_progression(emit, patch, asm)
+    reward_once = add_progression(emit, patch, asm)
     add_multi_boss(emit, patch, asm)
     add_tactical(emit, patch, asm)
     add_v3(emit, patch, asm)
     add_v4(emit, patch, asm)
+    add_v4_1(emit, patch, asm, reward_once)
+    add_v4_2(emit, patch, asm)
 
     # Existing footer buffer: GBK, NUL-terminated, 71 bytes plus terminator.
     # Reuse the same pointer/layout; pad the unused tail with NUL bytes.
