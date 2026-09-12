@@ -49,7 +49,7 @@ class ProgressionTests(unittest.TestCase):
 
     def test_rewards_stage_boundaries_stacking_and_reentry(self):
         for stage, milestone in [(1,0),(2,0),(3,100),(9,100),(10,500),(29,0),(30,600),(60,600)]:
-            for plants,clear in [([21],75),([21,46],75),([],75),([21,1],0),([13],0),([27],0)]:
+            for plants,clear in [([21],100),([21,46],100),([],100),([21,1],0),([13],0),([27],0)]:
                 with self.subTest(stage=stage,plants=plants):
                     vm=self.reward_vm(stage,plants)
                     coins=self.complete(vm)
@@ -64,8 +64,8 @@ class ProgressionTests(unittest.TestCase):
         for mode,score in [(0,5),(60,5),(70,4)]:
             vm=self.reward_vm(30,[21],mode,score);self.assertEqual(self.complete(vm),0)
         vm=self.reward_vm(2,[1]);vm.u.mem_write(PLANT+0x141,b'\1')
-        self.assertEqual(self.complete(vm),3)
-        vm.w(CHALLENGE+0x6c,2);self.assertEqual(self.complete(vm),7)
+        self.assertEqual(self.complete(vm),4)
+        vm.w(CHALLENGE+0x6c,2);self.assertEqual(self.complete(vm),8)
 
     def test_original_transition_restored_and_stage_incremented(self):
         old,new=pefile.PE(data=ORIGINAL),pefile.PE(data=PATCHED)

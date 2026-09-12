@@ -68,18 +68,17 @@ class V42Tests(unittest.TestCase):
             self.assertEqual(vm.r(ZOMBIE+0xf0),0)
             self.assertEqual(vm.r(PLANT+0xf0),0)
 
-    def test_boss_only_sunflower_only_and_both_wait_full_20_seconds(self):
+    def test_sunflower_waits_full_20_seconds(self):
         helper=test_v4_1.V41Tests()
-        for plants,zombies in (((),(25,)),((1,),()),((1,),(25,))):
-            vm=helper.field(plants,zombies)
-            helper.start(vm)
-            for _ in range(1999): helper.tick(vm)
-            self.assertEqual(vm.events,[])
-            self.assertEqual(vm.r(CHALLENGE+0x94),1)
-            helper.tick(vm)
-            self.assertEqual(vm.events,['complete'])
-            helper.tick(vm)
-            self.assertEqual(vm.events,['complete'])
+        vm=helper.field((1,),())
+        helper.start(vm)
+        for _ in range(1999): helper.tick(vm)
+        self.assertEqual(vm.events,[])
+        self.assertEqual(vm.r(CHALLENGE+0x94),1)
+        helper.tick(vm)
+        self.assertEqual(vm.events,['complete'])
+        helper.tick(vm)
+        self.assertEqual(vm.events,['complete'])
 
     def sled(self, mode=70, roll=0):
         vm,team=test_v4.V4Tests().team(mode=mode)
@@ -109,51 +108,6 @@ class V42Tests(unittest.TestCase):
         vm.stubs[0x5317c0]=damage
         vm.run(0x5281d5,0x52822d)
         self.assertEqual(vm.reg(UC_X86_REG_ESP),STACK)
-
-    def test_four_or_five_cells_half_probability_once_per_team_no_board_ice_writes(self):
-        for roll,distance in ((0,320),(1,400)):
-            vm,team=self.sled(roll=roll)
-            vm.w(BOARD+0x60c,800)
-            old=bytes(vm.u.mem_read(BOARD+0x60c,48))
-            self.sled_ice(vm,team[0])
-            self.assertEqual(vm.r(team[0]+0x134),SLED_MAGIC)
-            self.assertEqual(vm.r(team[0]+0x13c),distance)
-            self.assertEqual(rf(vm,team[0]+0x138),600.5)
-            for pos in (600.5,500,600.5-distance):
-                wf(vm,team[0]+0x2c,pos)
-                for p in team: self.sled_ice(vm,p)
-                self.assertNotIn('damage',vm.events)
-            wf(vm,team[0]+0x2c,600.5-distance-0.1)
-            self.sled_ice(vm,team[0])
-            self.assertEqual(vm.events.count('damage'),1)
-            self.assertEqual(vm.events.count('roll'),1)
-            self.assertEqual(bytes(vm.u.mem_read(BOARD+0x60c,48)),old)
-
-    def test_real_ice_can_extend_sled_run_and_save_does_not_reroll(self):
-        vm,team=self.sled()
-        self.sled_ice(vm,team[0])
-        vm.w(BOARD+0x60c,100)
-        vm.w(BOARD+0x624,500)
-        wf(vm,team[0]+0x2c,180)
-        self.sled_ice(vm,team[0])
-        self.assertNotIn('damage',vm.events)
-        loaded,newteam=self.sled(roll=1)
-        loaded.u.mem_write(newteam[0],bytes(vm.u.mem_read(team[0],0x15c)))
-        self.sled_ice(loaded,newteam[0])
-        self.assertNotIn('roll',loaded.events)
-        self.assertEqual(loaded.r(newteam[0]+0x13c),320)
-
-    def test_random_conversion_moves_all_sled_members_to_new_origin(self):
-        vm,team=self.sled(roll=1)
-        wf(vm,team[0]+0x2c,222.25)
-        vm.reg(UC_X86_REG_EAX,team[0])
-        vm.run(0x651177,0x651180)
-        for i,p in enumerate(team):
-            self.assertEqual(rf(vm,p+0x2c),222.25+i*50)
-        self.assertEqual(rf(vm,team[0]+0x138),222.25)
-        self.assertEqual(vm.r(team[0]+0x13c),400)
-        self.assertEqual(vm.reg(UC_X86_REG_ESP),STACK-8)
-        self.assertEqual(vm.r(STACK-8),team[0])
 
     def test_health_toggle_modes_pause_and_serialized_state(self):
         for mode in (60,61,70,71):

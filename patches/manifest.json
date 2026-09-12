@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "63e7ad3af2c9b7d6c3699c2cdadacca1b188cfc0c00653b0275ad9ad2f0d7067",
+  "patched_sha256": "7c022407d6a9299f5674112225dccec7bbde4e30c34e0cec4f463ec17c69d41c",
   "symbols": {
     "boss_die": "0x794000",
     "is_final_boss": "0x794060",
@@ -65,20 +65,31 @@
     "dancer_native_walk": "0x795060",
     "dancer_team_walk": "0x795070",
     "dancer_spawn_alignment": "0x795260",
-    "completion_grace_start": "0x7952c0",
-    "completion_grace_tick": "0x795390",
-    "completion_grace_transition": "0x795420",
-    "completion_grace_no_defeat": "0x795460",
-    "butter_keep_dancer_leader": "0x795490",
-    "sled_private_ice_init": "0x7954d0",
-    "sled_random_formation": "0x795540",
-    "sled_private_ice_update": "0x7955e0",
-    "health_display_toggle": "0x795680",
-    "health_display_totals": "0x7956e0",
-    "health_display_digit": "0x795740",
-    "health_display_number": "0x795830",
-    "health_overlay_draw": "0x795890",
-    "health_overlay_board_draw": "0x795ab0"
+    "iz_challenge_state_init": "0x7952c0",
+    "rescue_label": "0x795310",
+    "rescue_string": "0x795340",
+    "sun_rescue_once": "0x795360",
+    "boss_ice_provenance": "0x7953e0",
+    "boss_ice_full_lane": "0x795440",
+    "dancer_lethal_reach": "0x7954c0",
+    "dancer_reach_target": "0x795510",
+    "dancer_reach_squash_target": "0x795540",
+    "dancer_reach_squash_damage": "0x795570",
+    "completion_grace_start": "0x795590",
+    "completion_grace_tick": "0x7956b0",
+    "completion_grace_transition": "0x795800",
+    "completion_grace_no_defeat": "0x795840",
+    "butter_keep_dancer_leader": "0x795870",
+    "sled_private_ice_init": "0x7958b0",
+    "sled_random_formation": "0x795920",
+    "sled_arrival_update": "0x795a10",
+    "sled_private_ice_update": "0x795b70",
+    "health_display_toggle": "0x795c60",
+    "health_display_totals": "0x795cc0",
+    "health_display_digit": "0x795d20",
+    "health_display_number": "0x795e10",
+    "health_overlay_draw": "0x795e70",
+    "health_overlay_board_draw": "0x796090"
   },
   "hooks": [
     {
@@ -306,6 +317,30 @@
       "length": 5
     },
     {
+      "va": "0x41f218",
+      "length": 5
+    },
+    {
+      "va": "0x534e1c",
+      "length": 6
+    },
+    {
+      "va": "0x52a88d",
+      "length": 10
+    },
+    {
+      "va": "0x467657",
+      "length": 9
+    },
+    {
+      "va": "0x460829",
+      "length": 6
+    },
+    {
+      "va": "0x460739",
+      "length": 6
+    },
+    {
       "va": "0x42b90d",
       "length": 5
     },
@@ -330,6 +365,10 @@
       "length": 9
     },
     {
+      "va": "0x528050",
+      "length": 5
+    },
+    {
       "va": "0x5281d5",
       "length": 6
     },
@@ -346,5 +385,5 @@
       "length": 72
     }
   ],
-  "code_bytes": 6855
+  "code_bytes": 8359
 }

@@ -6,7 +6,7 @@ No award/end flag is set until the grace period finishes, so input stays live.
 GRACE_MAGIC = 0x31475a49
 
 
-def add_v4_1(emit, patch, asm, reward_once):
+def add_v4_1(emit, patch, asm, reward_once, recovery):
     gate = emit('completion_grace_start', f'''
         call {reward_once}
         pushfd
@@ -20,6 +20,8 @@ def add_v4_1(emit, patch, asm, reward_once):
         jne original
         cmp dword ptr [ebp+0x90], {GRACE_MAGIC}
         je waiting
+        mov dword ptr [ebp+0x94], 0
+        mov dword ptr [ebp+0xa0], 0
         mov dword ptr [esp], 0
     plant:
         mov edx, dword ptr [ebp+4]
@@ -36,7 +38,8 @@ def add_v4_1(emit, patch, asm, reward_once):
         je plant
         cmp dword ptr [eax+0x40], 0
         jle plant
-        jmp arm
+        mov dword ptr [ebp+0x94], 2000
+        jmp scan_zombies
     scan_zombies:
         mov dword ptr [esp], 0
     zombie:
@@ -44,7 +47,7 @@ def add_v4_1(emit, patch, asm, reward_once):
         mov esi, esp
         call 0x41c8f0
         test al, al
-        jz original
+        jz scanned
         mov eax, dword ptr [esp]
         cmp dword ptr [eax+0x24], 25
         jne zombie
@@ -54,9 +57,18 @@ def add_v4_1(emit, patch, asm, reward_once):
         dec edx
         cmp edx, 2
         jbe zombie
+        mov dword ptr [ebp+0xa0], 1
+    scanned:
+        cmp dword ptr [ebp+0xa0], 1
+        je arm
+        cmp dword ptr [ebp+0x94], 0
+        je original
     arm:
+        cmp dword ptr [ebp+0xa0], 1
+        je armed
+        mov dword ptr [ebp+0xa0], 4
+    armed:
         mov dword ptr [ebp+0x90], {GRACE_MAGIC}
-        mov dword ptr [ebp+0x94], 2000
         mov eax, dword ptr [esp+44]
         mov dword ptr [ebp+0x98], eax
     waiting:
@@ -76,6 +88,7 @@ def add_v4_1(emit, patch, asm, reward_once):
         pushfd
         pushad
         mov ebp, dword ptr [esp+40]
+        call {recovery}
         mov eax, dword ptr [ebp]
         cmp dword ptr [eax+0x7f8], 70
         jne done
@@ -86,10 +99,54 @@ def add_v4_1(emit, patch, asm, reward_once):
         jne done
         cmp dword ptr [ebp+0x60], 5
         jne reset
+        # V4.0.2 serialized the same timer but did not record the ice gate.
+        cmp dword ptr [ebp+0xa0], 0
+        jne timer
+        mov dword ptr [ebp+0xa0], 1
+    timer:
         cmp dword ptr [ebp+0x94], 0
-        jle done
+        jle boss_wait
         dec dword ptr [ebp+0x94]
         jnz done
+    boss_wait:
+        cmp dword ptr [ebp+0xa0], 1
+        jne dispatch
+        # If every boss and its pending car have died, there is no remaining
+        # actor capable of completing the ice lane. Do not strand a won game.
+        sub esp, 4
+        mov dword ptr [esp], 0
+    pending:
+        mov edx, dword ptr [ebp+4]
+        mov esi, esp
+        call 0x41c8f0
+        test al, al
+        jz no_pending
+        mov eax, dword ptr [esp]
+        cmp dword ptr [eax+0xc8], 0
+        jle pending
+        mov edx, dword ptr [eax+0x28]
+        dec edx
+        cmp edx, 2
+        jbe pending
+        cmp dword ptr [eax+0x24], 25
+        je keep_waiting
+        cmp dword ptr [eax+0x24], 12
+        jne pending
+        cmp dword ptr [eax+0x134], 0x33495a49
+        jne pending
+        mov edx, dword ptr [eax+0x138]
+        cmp edx, dword ptr [ebp+0x6c]
+        jne pending
+    keep_waiting:
+        add esp, 4
+        jmp done
+    no_pending:
+        add esp, 4
+        mov dword ptr [ebp+0xa0], 2
+    dispatch:
+        cmp dword ptr [ebp+0xa0], 3
+        je done
+        mov dword ptr [ebp+0xa0], 3
         mov esi, ebp
         mov ebp, esp
         sub esp, 528
@@ -106,6 +163,7 @@ def add_v4_1(emit, patch, asm, reward_once):
     reset:
         mov dword ptr [ebp+0x90], 0
         mov dword ptr [ebp+0x94], 0
+        mov dword ptr [ebp+0xa0], 0
     done:
         popad
         popfd

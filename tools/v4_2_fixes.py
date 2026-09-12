@@ -2,6 +2,7 @@
 
 SLED_MAGIC = 0x32495a49
 HP_MAGIC = 0x32505a49
+JOIN_MAGIC = 0x334a5a49
 
 
 def add_v4_2(emit, patch, asm):
@@ -45,13 +46,11 @@ def add_v4_2(emit, patch, asm):
         je done
         cmp dword ptr [esi+0x134], {SLED_MAGIC}
         je done
-        mov eax, 2
-        call 0x5af400
-        add eax, 4
-        imul eax, eax, 80
+        mov eax, 320
         mov dword ptr [esi+0x13c], eax
         mov eax, dword ptr [esi+0x2c]
         mov dword ptr [esi+0x138], eax
+        mov dword ptr [esi+0x140], 0
         mov dword ptr [esi+0x134], {SLED_MAGIC}
     done:
         popad
@@ -88,22 +87,32 @@ def add_v4_2(emit, patch, asm):
         cmp dword ptr [eax+0xf0], edx
         jne next
         mov ebx, eax
-        lea eax, [edi+1]
+        mov eax, edi
         imul eax, eax, 50
+        add eax, 800
+        mov edx, eax
+        sub edx, 320
+        mov dword ptr [ebx+0x13c], edx
         push eax
-        fld dword ptr [esi+0x2c]
-        fiadd dword ptr [esp]
+        fild dword ptr [esp]
         add esp, 4
         fstp dword ptr [ebx+0x2c]
         fld dword ptr [ebx+0x2c]
         call 0x6397d0
         mov dword ptr [ebx+8], eax
+        mov dword ptr [ebx+0x134], {JOIN_MAGIC}
+        lea eax, [edi+1]
+        imul eax, eax, 50
+        mov dword ptr [ebx+0x138], eax
+        mov dword ptr [ebx+0x34], 0
     next:
         inc edi
         cmp edi, 3
         jb member
         mov eax, esi
         call {initialize}
+        mov dword ptr [esi+0x140], {JOIN_MAGIC}
+        mov dword ptr [esi+0x34], 0
         fxrstor [esp]
         mov esp, ebp
     done:
@@ -115,6 +124,106 @@ def add_v4_2(emit, patch, asm):
         jmp 0x651180
     ''')
     patch(0x651177, asm(f'jmp {relocate}', 0x651177), 9)
+
+    # Arrival is independent of the original boarding timer: the leader
+    # waits while three members slide in, then the assembled team departs.
+    arrival = emit('sled_arrival_update', f'''
+        pushfd
+        pushad
+        mov esi, eax
+        mov eax, dword ptr [esi]
+        cmp dword ptr [eax+0x7f8], 61
+        jb done
+        cmp dword ptr [eax+0x7f8], 70
+        ja done
+        cmp dword ptr [esi+0x24], 13
+        jne done
+        cmp dword ptr [esi+0x134], {JOIN_MAGIC}
+        je follower
+        cmp dword ptr [esi+0x134], {JOIN_MAGIC+1}
+        je follower
+        cmp dword ptr [esi+0x140], {JOIN_MAGIC}
+        jne done
+        xor edi, edi
+    member:
+        mov edx, dword ptr [esi+4]
+        mov ecx, dword ptr [esi+edi*4+0xf4]
+        call 0x41c7f0
+        test eax, eax
+        jz next
+        cmp dword ptr [eax+0x134], {JOIN_MAGIC}
+        je hold
+    next:
+        inc edi
+        cmp edi, 3
+        jb member
+        mov dword ptr [esi+0x140], 0
+        mov dword ptr [esi+0x34], 0x3f19999a
+        jmp done
+    hold:
+        mov dword ptr [esi+0x68], 500
+        jmp done
+    follower:
+        mov edx, dword ptr [esi+4]
+        mov ecx, dword ptr [esi+0xf0]
+        call 0x41c7f0
+        test eax, eax
+        jz release
+        cmp byte ptr [eax+0xec], 0
+        jne release
+        cmp dword ptr [eax+0x28], 19
+        je release
+        mov dword ptr [esi+0x68], 500
+        cmp dword ptr [esi+0x134], {JOIN_MAGIC+1}
+        jne approach
+        cmp dword ptr [eax+0x140], {JOIN_MAGIC}
+        jne release
+        jmp done
+    approach:
+        cmp dword ptr [esi+0xb0], 0
+        jg done
+        cmp dword ptr [esi+0xb4], 0
+        jg done
+        fld dword ptr [eax+0x2c]
+        fiadd dword ptr [esi+0x138]
+        fild dword ptr [esi+0x13c]
+        fcom st(1)
+        fnstsw ax
+        test ah, 0x41
+        jz arrival_bound
+        fstp st(0)
+        jmp advance
+    arrival_bound:
+        fstp st(1)
+    advance:
+        fld dword ptr [esi+0x2c]
+        push 6
+        fisub dword ptr [esp]
+        add esp, 4
+        fcom st(1)
+        fnstsw ax
+        test ah, 0x41
+        jnz arrived
+        fstp dword ptr [esi+0x2c]
+        fstp st(0)
+        jmp done
+    arrived:
+        fstp st(0)
+        fstp dword ptr [esi+0x2c]
+        mov dword ptr [esi+0x134], {JOIN_MAGIC+1}
+        jmp done
+    release:
+        mov dword ptr [esi+0x134], 0
+        mov dword ptr [esi+0x34], 0x3f19999a
+    done:
+        popad
+        popfd
+        sub esp, 8
+        push ebx
+        push esi
+        jmp 0x528055
+    ''')
+    patch(0x528050, asm(f'jmp {arrival}', 0x528050), 5)
 
     ice = emit('sled_private_ice_update', f'''
         pushfd
@@ -130,31 +239,52 @@ def add_v4_2(emit, patch, asm):
         jne safe
         cmp dword ptr [esi+0x134], {SLED_MAGIC}
         jne safe
+        cmp dword ptr [esi+0x140], {JOIN_MAGIC}
+        je safe
+        # Fixed four-cell cap, including saves made by the previous patch.
+        mov dword ptr [esi+0x13c], 320
         fld dword ptr [esi+0x138]
         fisub dword ptr [esi+0x13c]
+        push 440
+        fild dword ptr [esp]
+        add esp, 4
+        fcom st(1)
+        fnstsw ax
+        test ah, 0x41
+        jz red_line
+        fstp st(0)
+        jmp bound
+    red_line:
+        fstp st(1)
+    bound:
+        # A conversion already left of the line stops at its origin.
+        fld dword ptr [esi+0x138]
+        fcom st(1)
+        fnstsw ax
+        test ah, 0x41
+        jnz origin
+        fstp st(0)
+        jmp compare
+    origin:
+        fstp st(1)
+    compare:
+        fst dword ptr [esi+0x144]
+        push 1
+        fiadd dword ptr [esp]
+        add esp, 4
         fcomp dword ptr [esi+0x2c]
         fnstsw ax
         test ah, 0x41
-        jnz safe
-        mov edx, dword ptr [esi+4]
-        mov ecx, dword ptr [esi+0x1c]
-        cmp ecx, 5
-        jae off_ice
-        cmp dword ptr [edx+ecx*4+0x624], 0
-        jle off_ice
-        fld dword ptr [esi+0x2c]
-        push 10
-        fiadd dword ptr [esp]
-        add esp, 4
-        fild dword ptr [edx+ecx*4+0x60c]
-        fcompp
-        fnstsw ax
-        test ah, 0x41
-        jnz safe
+        jnp safe
     off_ice:
-        popad
-        popfd
-        jmp 0x528221
+        mov eax, dword ptr [esi+0x144]
+        mov dword ptr [esi+0x2c], eax
+        # Native helmet destruction normally precedes BobsledCrash. Clear
+        # the sled armor too, so a later hit cannot crash an unlinked team.
+        mov dword ptr [esi+0xc4], 0
+        mov dword ptr [esi+0xd0], 0
+        mov ebx, esi
+        call 0x527f20
     safe:
         popad
         popfd

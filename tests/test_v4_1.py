@@ -82,12 +82,12 @@ class V41Tests(unittest.TestCase):
             self.assertEqual(vm.events, ['complete'])
 
     def test_2000_ticks_reentry_save_resume_and_next_stage(self):
-        vm = self.field()
+        vm = self.field(zombies=())
         self.start(vm)
         for _ in range(1000): self.tick(vm)
         self.start(vm)  # Never reset/extend the countdown.
         self.assertEqual(vm.r(CHALLENGE+0x94), 1000)
-        loaded = self.field()
+        loaded = self.field(zombies=())
         loaded.u.mem_write(CHALLENGE, bytes(vm.u.mem_read(CHALLENGE, 0xbc)))
         for _ in range(999): self.tick(loaded)
         self.assertEqual(loaded.events, [])

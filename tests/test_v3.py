@@ -375,7 +375,7 @@ class PauseTests(unittest.TestCase):
                 vm.reg(UC_X86_REG_ESI,packet)
                 vm.run(0x488500)
                 self.assertEqual(vm.reg(UC_X86_REG_EAX)&255,1)
-            self.assertEqual(vm.r(BOARD+0x5560),250 if seed==66 else 350)
+            self.assertEqual(vm.r(BOARD+0x5560),225 if seed==66 else 350)
 
     def test_packet_release_keeps_unpaused_and_other_modes_refreshing(self):
         for mode,paused in ((70,False),(0,True),(71,True)):

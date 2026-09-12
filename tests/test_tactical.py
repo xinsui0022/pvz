@@ -28,7 +28,7 @@ class TacticalTests(unittest.TestCase):
     def test_price_sequence_display_charge_stage_save_restart(self):
         v=self.vm()
         for i in range(6):
-            expected=75 if i%2==0 else 100
+            expected=75 if i%2==0 else 125
             for _ in range(3):
                 self.assertEqual(self.price(v),expected)
                 self.assertEqual(self.price(v,current=True),expected)
@@ -39,7 +39,7 @@ class TacticalTests(unittest.TestCase):
             loaded.u.mem_write(CHALLENGE,bytes(v.u.mem_read(CHALLENGE,0xbc)))
             v=loaded
         self.purchased(v)
-        self.assertEqual(self.price(v),100)
+        self.assertEqual(self.price(v),125)
         # Execute actual constructor initialization through its first memset.
         v.w(0x6a9f38,APP);v.reg(UC_X86_REG_EDI,CHALLENGE)
         v.reg(UC_X86_REG_ESP,STACK);v.run(0x41f1b0,0x41f23d)
@@ -58,7 +58,7 @@ class TacticalTests(unittest.TestCase):
         self.assertEqual(self.price(v),125)
 
     def test_successful_payment_places_then_toggles_and_failure_does_not(self):
-        for money,parity,success in [(75,0,True),(74,0,False),(100,1,True),(99,1,False)]:
+        for money,parity,success in [(75,0,True),(74,0,False),(125,1,True),(124,1,False)]:
             v=self.vm();v.w(CHALLENGE+0xb8,parity);v.w(BOARD+0x5560,money)
             # Execute actual mouse-placement payment through the post-spawn
             # hook; stub only advice, coin counting, spawn and failure sound.

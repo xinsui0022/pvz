@@ -138,7 +138,7 @@ def add_progression(emit, patch, asm):
         je next_plant
         jmp pay
     cleared:
-        add edi, 75
+        add edi, 100
     pay:
         test edi, edi
         jz done

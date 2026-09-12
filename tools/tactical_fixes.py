@@ -67,7 +67,7 @@ def add_tactical(emit, patch, asm):
         jz fallback
         mov eax, dword ptr [ecx+0xb8]
         and eax, 1
-        imul eax, eax, 25
+        imul eax, eax, 50
         add eax, 75
         ret
     fallback:
