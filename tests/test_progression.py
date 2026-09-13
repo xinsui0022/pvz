@@ -48,12 +48,14 @@ class ProgressionTests(unittest.TestCase):
         return sum(1 for event in vm.events[event_start:] if event[0] == 'sun')
 
     def test_rewards_stage_boundaries_stacking_and_reentry(self):
-        for stage, milestone in [(1,0),(2,0),(3,100),(9,100),(10,500),(29,0),(30,600),(60,600)]:
+        for stage, milestone in [(1,0),(2,0),(3,100),(9,100),(10,1000),(29,0),(30,1100),(60,1100)]:
             for plants,clear in [([21],100),([21,46],100),([],100),([21,1],0),([13],0),([27],0)]:
                 with self.subTest(stage=stage,plants=plants):
                     vm=self.reward_vm(stage,plants)
                     coins=self.complete(vm)
                     self.assertEqual(coins*25,milestone+clear)
+                    self.assertTrue(all(300 <= e[1] < 660 and 300 <= e[2] <= 330
+                                        for e in vm.events if e[0] == 'sun'))
                     self.assertEqual(self.complete(vm),0)
                     # A serialized ledger copy into a fresh VM also prevents payment.
                     loaded=self.reward_vm(stage,plants)

@@ -9,6 +9,8 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 PREVIOUS_VERSIONS={
+    '2e983cf3675e4e8f748e374628f79aa7fa815f84f5690ef8bfe377a4847b6542':'dynamic-plants-v5-sun1000',
+    '00632b579e3a07f7fac378b12c59f00de8a0667da581a6a77830c97fa061879d':'pre-dynamic-plants',
     '7c022407d6a9299f5674112225dccec7bbde4e30c34e0cec4f463ec17c69d41c':'v4.0.3',
     'f7712d23e92409b2aeb5707ad9e9880cafd838ce93e270ac5ffcc42a191c326f':'v4.0.3-zero-rescue',
     '63e7ad3af2c9b7d6c3699c2cdadacca1b188cfc0c00653b0275ad9ad2f0d7067':'v4.0.2',

@@ -133,13 +133,13 @@ class V41Tests(unittest.TestCase):
         vm.coin_stub()
         self.start(vm)
         suns = [e for e in vm.events if isinstance(e, tuple)]
-        self.assertEqual(len(suns), 24)  # +600, sunflower prevents +75.
+        self.assertEqual(len(suns), 44)  # +1100, sunflower prevents clear reward.
         vm.u.mem_write(PLANT+0x141, b'\1')
         vm.reg(UC_X86_REG_ESP, STACK)
         vm.w(STACK, STOP)
         vm.reg(UC_X86_REG_ECX, CHALLENGE)
         vm.run(symbol('completion_reward_once'))
-        self.assertEqual(len(vm.events), 24)
+        self.assertEqual(len(vm.events), 44)
 
     def test_completed_grace_cannot_become_low_money_defeat(self):
         vm = self.field()

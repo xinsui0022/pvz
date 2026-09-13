@@ -66,17 +66,23 @@ def add_progression(emit, patch, asm):
         mov ebp, eax
         mov esi, ecx
         xor edi, edi
+        mov ebx, 300
     coin:
         cmp esi, 25
         jb done
         push 2
         push 4
-        push 300
+        push ebx
         lea eax, [edi+300]
         push eax
         mov ecx, ebp
         call 0x40cb10
         add edi, 12
+        cmp edi, 360
+        jb same_row
+        xor edi, edi
+        add ebx, 30
+    same_row:
         sub esi, 25
         jmp coin
     done:
@@ -118,7 +124,7 @@ def add_progression(emit, patch, asm):
         div ecx
         test edx, edx
         jnz plants
-        add edi, 500
+        add edi, 1000
     plants:
         mov dword ptr [esp], 0
     next_plant:
