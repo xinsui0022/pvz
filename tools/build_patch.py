@@ -24,6 +24,7 @@ from v4_fixes import add_v4
 from v4_1_fixes import add_v4_1
 from v4_2_fixes import add_v4_2
 from v4_3_fixes import add_v4_3
+from v5_fixes import add_v5
 
 ORIGINAL_SHA256 = '343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb'
 BASE = 0x400000
@@ -252,7 +253,8 @@ def build(original):
     add_v3(emit, patch, asm)
     add_v4(emit, patch, asm)
     recovery = add_v4_3(emit, patch, asm)
-    add_v4_1(emit, patch, asm, reward_once, recovery)
+    boss_tick = add_v5(emit, patch, asm, symbols)
+    add_v4_1(emit, patch, asm, reward_once, recovery, boss_tick)
     add_v4_2(emit, patch, asm)
 
     # Existing footer buffer: GBK, NUL-terminated, 71 bytes plus terminator.

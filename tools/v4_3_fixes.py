@@ -55,6 +55,25 @@ def add_v4_3(emit, patch, asm):
         je done
         cmp dword ptr [ebx+0x5560], 25
         jg done
+        sub esp, 4
+        mov dword ptr [esp], 0
+    rescue_scan:
+        mov edx, ebx
+        mov esi, esp
+        call 0x41c8f0
+        test al, al
+        jz rescue_empty
+        mov eax, dword ptr [esp]
+        cmp dword ptr [eax+0xc8], 0
+        jle rescue_scan
+        mov edx, dword ptr [eax+0x28]
+        dec edx
+        cmp edx, 2
+        jbe rescue_scan
+        add esp, 4
+        jmp done
+    rescue_empty:
+        add esp, 4
         mov dword ptr [ebp+0xa4], {RESCUE_MAGIC}
         add dword ptr [ebx+0x5560], 5000
         mov esi, dword ptr [ebx+0x140]

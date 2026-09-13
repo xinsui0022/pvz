@@ -69,7 +69,9 @@ class ProgressionTests(unittest.TestCase):
 
     def test_original_transition_restored_and_stage_incremented(self):
         old,new=pefile.PE(data=ORIGINAL),pefile.PE(data=PATCHED)
-        self.assertEqual(old.get_data(0x29ff9,30),new.get_data(0x29ff9,30))
+        # V5 wraps only ClearAdvice to restore the pre-boss music at stage end.
+        self.assertEqual(old.get_data(0x29ff9,7),new.get_data(0x29ff9,7))
+        self.assertEqual(old.get_data(0x2a005,18),new.get_data(0x2a005,18))
         vm=VM();vm.reg(UC_X86_REG_EDI,CHALLENGE);vm.w(CHALLENGE+0x6c,29)
         vm.stub(0x40ca50,'clear_advice')
         vm.run(0x429ff9,0x42a005)

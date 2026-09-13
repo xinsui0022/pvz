@@ -1,6 +1,6 @@
 {
   "original_sha256": "343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb",
-  "patched_sha256": "7c022407d6a9299f5674112225dccec7bbde4e30c34e0cec4f463ec17c69d41c",
+  "patched_sha256": "00632b579e3a07f7fac378b12c59f00de8a0667da581a6a77830c97fa061879d",
   "symbols": {
     "boss_die": "0x794000",
     "is_final_boss": "0x794060",
@@ -69,27 +69,36 @@
     "rescue_label": "0x795310",
     "rescue_string": "0x795340",
     "sun_rescue_once": "0x795360",
-    "boss_ice_provenance": "0x7953e0",
-    "boss_ice_full_lane": "0x795440",
-    "dancer_lethal_reach": "0x7954c0",
-    "dancer_reach_target": "0x795510",
-    "dancer_reach_squash_target": "0x795540",
-    "dancer_reach_squash_damage": "0x795570",
-    "completion_grace_start": "0x795590",
-    "completion_grace_tick": "0x7956b0",
-    "completion_grace_transition": "0x795800",
-    "completion_grace_no_defeat": "0x795840",
-    "butter_keep_dancer_leader": "0x795870",
-    "sled_private_ice_init": "0x7958b0",
-    "sled_random_formation": "0x795920",
-    "sled_arrival_update": "0x795a10",
-    "sled_private_ice_update": "0x795b70",
-    "health_display_toggle": "0x795c60",
-    "health_display_totals": "0x795cc0",
-    "health_display_digit": "0x795d20",
-    "health_display_number": "0x795e10",
-    "health_overlay_draw": "0x795e70",
-    "health_overlay_board_draw": "0x796090"
+    "boss_ice_provenance": "0x795430",
+    "boss_ice_full_lane": "0x795490",
+    "dancer_lethal_reach": "0x795510",
+    "dancer_reach_target": "0x795560",
+    "dancer_reach_squash_target": "0x795590",
+    "dancer_reach_squash_damage": "0x7955c0",
+    "v5_state_init": "0x7955e0",
+    "v5_live_boss_and_car": "0x795620",
+    "v5_single_boss_random": "0x7956b0",
+    "v5_restore_music": "0x795740",
+    "v5_wait_label": "0x7957a0",
+    "v5_wait_string": "0x7957c0",
+    "v5_boss_tick": "0x7957e0",
+    "v5_prioritize_boss_car": "0x7959e0",
+    "v5_stage_music_restore": "0x795a30",
+    "completion_grace_start": "0x795a60",
+    "completion_grace_tick": "0x795b80",
+    "completion_grace_transition": "0x795cd0",
+    "completion_grace_no_defeat": "0x795d10",
+    "butter_keep_dancer_leader": "0x795d40",
+    "sled_private_ice_init": "0x795d80",
+    "sled_random_formation": "0x795df0",
+    "sled_arrival_update": "0x795ee0",
+    "sled_private_ice_update": "0x796040",
+    "health_display_toggle": "0x796130",
+    "health_display_totals": "0x796190",
+    "health_display_digit": "0x7961f0",
+    "health_display_number": "0x7962e0",
+    "health_overlay_draw": "0x796340",
+    "health_overlay_board_draw": "0x796560"
   },
   "hooks": [
     {
@@ -341,6 +350,18 @@
       "length": 6
     },
     {
+      "va": "0x6510e9",
+      "length": 5
+    },
+    {
+      "va": "0x534e0a",
+      "length": 6
+    },
+    {
+      "va": "0x42a000",
+      "length": 5
+    },
+    {
       "va": "0x42b90d",
       "length": 5
     },
@@ -385,5 +406,5 @@
       "length": 72
     }
   ],
-  "code_bytes": 8359
+  "code_bytes": 9591
 }

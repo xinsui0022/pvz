@@ -6,7 +6,7 @@ No award/end flag is set until the grace period finishes, so input stays live.
 GRACE_MAGIC = 0x31475a49
 
 
-def add_v4_1(emit, patch, asm, reward_once, recovery):
+def add_v4_1(emit, patch, asm, reward_once, recovery, boss_tick):
     gate = emit('completion_grace_start', f'''
         call {reward_once}
         pushfd
@@ -88,6 +88,7 @@ def add_v4_1(emit, patch, asm, reward_once, recovery):
         pushfd
         pushad
         mov ebp, dword ptr [esp+40]
+        call {boss_tick}
         call {recovery}
         mov eax, dword ptr [ebp]
         cmp dword ptr [eax+0x7f8], 70

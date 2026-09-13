@@ -9,6 +9,8 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 PREVIOUS_VERSIONS={
+    '7c022407d6a9299f5674112225dccec7bbde4e30c34e0cec4f463ec17c69d41c':'v4.0.3',
+    'f7712d23e92409b2aeb5707ad9e9880cafd838ce93e270ac5ffcc42a191c326f':'v4.0.3-zero-rescue',
     '63e7ad3af2c9b7d6c3699c2cdadacca1b188cfc0c00653b0275ad9ad2f0d7067':'v4.0.2',
     '888ff660c56b80c361b9a734d3daa8a877a67decb9a1bccddffda1417fb926c0':'v4.0.1',
     '7e48f0f3db6bd4aaa9258a58595dd43f0b8933916785871bf78a6219498d497a':'v4.0.0',
