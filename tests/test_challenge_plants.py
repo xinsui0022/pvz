@@ -78,6 +78,20 @@ class ChallengePlantTests(unittest.TestCase):
         v.stubs[0x531A80] = eligibility
         v.stubs[0x5320B0] = rectangle
 
+    def reanimations(self, v, loops=(0, 0, 0, 0)):
+        """Real native DataArray IDs for body and all three attached heads."""
+        v.w(APP + 0x820, PROFILE)
+        v.w(PROFILE + 8, PROFILE + 0x200)
+        v.w(PROFILE + 0x200, REANIM)
+        v.w(PROFILE + 0x208, len(loops))
+        for i, loop in enumerate(loops):
+            p = REANIM + i * 0xA0
+            v.w(p + 0x9C, 0x10000 + i)
+            v.w(p + 4, 0x3F000000)
+            v.w(p + 8, 0x41900000)
+            v.w(p + 0x10, loop)
+            v.w(PLANT + 0x94 + i * 4, 0x10000 + i)
+
     def trigger(self, v):
         v.reg(UC_X86_REG_ESP, STACK)
         v.w(STACK, STOP)
@@ -203,12 +217,14 @@ class ChallengePlantTests(unittest.TestCase):
             self.assertEqual(v.reg(UC_X86_REG_EDI), PLANT)
             self.assertEqual(v.reg(UC_X86_REG_ESP), STACK - 12)
 
-    def test_setup_wakes_mushrooms_keeps_native_weapon_state_and_arms_potato(self):
+    def test_setup_wakes_and_freezes_all_native_layers_preserving_weapons(self):
         for seed in (2, 14, 15, 20, 4, 40, 42, 44, 46, 30):
             v = self.vm(seed=seed)
+            self.reanimations(v)
             v.w(PLANT + 0x50, 100)
-            v.w(PLANT + 0x94, 0x1234)
-            v.w(REANIM + 8, 0x41900000)
+            v.w(PLANT + 0xB0, 500)
+            v.w(PLANT + 0x58, 37)
+            v.w(PLANT + 0x5C, 80)
             v.u.mem_write(PLANT + 0x143, b'\1')
             def wake(vm):
                 self.assertEqual(vm.reg(UC_X86_REG_EAX), PLANT)
@@ -218,24 +234,22 @@ class ChallengePlantTests(unittest.TestCase):
             def armed(vm):
                 sp = vm.reg(UC_X86_REG_ESP)
                 self.assertEqual(vm.reg(UC_X86_REG_EAX), PLANT)
-                expected = ([0x657230, 0, 0x41400000] if seed == 4
+                expected = ([0x657230, 0, 0] if seed == 4
                             else [0x6580D4, 0, 0])
                 self.assertEqual([vm.r(sp + i) for i in (4, 8, 12)], expected)
                 vm.events.append('armed' if seed == 4 else 'idle')
                 vm.ret(12)
-            def body(vm):
-                self.assertEqual(vm.reg(UC_X86_REG_EAX), APP)
-                self.assertEqual(vm.reg(UC_X86_REG_ECX), 0x1234)
-                vm.ret(eax=REANIM)
             v.stubs[0x45E860] = wake
             v.stubs[0x45FD90] = armed
-            v.stubs[0x453CB0] = body
             v.stub(0x463920, 'refresh')
             v.w(STACK + 4, PLANT)
             v.reg(UC_X86_REG_EAX, CHALLENGE)
             v.run(0x42A530)
             self.assertEqual(v.reg(UC_X86_REG_ESP), STACK + 8)
-            self.assertEqual(v.r(REANIM + 8), 0 if seed in (2, 20) else 0x41900000)
+            self.assertEqual([v.r(REANIM + i * 0xA0 + 8) for i in range(4)], [0] * 4)
+            self.assertEqual(v.r(PLANT + 0xB0), 0)
+            self.assertEqual(v.r(PLANT + 0x58), 37)
+            self.assertEqual(v.r(PLANT + 0x5C), 80)
             self.assertEqual(v.u.mem_read(PLANT + 0x143, 1), b'\0')
             self.assertEqual(v.r(PLANT + 0x50), 0 if seed in (2, 14, 15, 20) else 100)
             if seed == 4:
@@ -277,14 +291,78 @@ class ChallengePlantTests(unittest.TestCase):
         v.run(0x42A530, 0x42A538)
         self.assertEqual(v.reg(UC_X86_REG_ECX), APP)
         self.assertEqual(v.reg(UC_X86_REG_EDX), PROFILE)
-        for mode, challenge, expected in ((70, False, 1), (70, True, 0),
-                                           (0, True, 0), (61, True, 0)):
+        for mode, challenge, expected in ((70, False, 1), (70, True, 1),
+                                           (0, True, 0), (61, True, 1)):
             v = self.vm(mode, challenge)
             v.reg(UC_X86_REG_EAX, APP)
-            v.run(v.symbols['challenge_plant_cosmetic_predicate'])
+            v.run(0x4537D0)
             self.assertEqual(v.reg(UC_X86_REG_EAX) & 255, expected)
         for site in COSMETIC_PREDICATE_SITES:
-            self.assertEqual(bytes(v.u.mem_read(site, 1)), b'\xe8')
+            self.assertEqual(bytes(v.u.mem_read(site, 5)), asm('call 0x4537d0', site))
+        self.assertEqual(bytes(v.u.mem_read(0x461EB9, 6)), asm('mov esi, dword ptr [ebx+0x94]', 0x461EB9))
+
+    def test_old_save_idle_layers_freeze_without_resetting_active_combat_state(self):
+        for seed in (6, 14, 15, 23, 27, 30, 40, 42, 44, 48):
+            v = self.vm(seed=seed)
+            self.reanimations(v, (0, 3, 0, 3))
+            fields = {0x3C: 26, 0x50: 0, 0x54: 140, 0x58: 80,
+                      0x90: 19, 0xD8: 12, 0x12C: 0x10001}
+            for off, value in fields.items(): v.w(PLANT + off, value)
+            v.w(PLANT + 0xB0, 500)
+            v.reg(UC_X86_REG_EAX, PLANT)
+            before = [v.reg(r) for r in REGS]
+            flags = v.reg(UC_X86_REG_EFLAGS)
+            v.run(v.symbols['challenge_cardboard_idle'])
+            self.assertEqual([v.reg(r) for r in REGS], before)
+            self.assertEqual(v.reg(UC_X86_REG_EFLAGS), flags)
+            self.assertEqual(v.reg(UC_X86_REG_ESP), STACK + 4)
+            self.assertEqual([v.r(REANIM + i * 0xA0 + 8) for i in range(4)],
+                             [0, 0x41900000, 0, 0x41900000])
+            self.assertEqual({off: v.r(PLANT + off) for off in fields}, fields)
+            self.assertEqual(v.r(PLANT + 0xB0), 0)
+
+    def test_upgrade_shooting_retains_native_gatling_and_gloom_burst_cadence(self):
+        for seed, counters in ((40, (19, 36, 52, 69)), (42, (127, 99, 71, 43))):
+            for count in counters:
+                v = self.vm(seed=seed)
+                self.reanimations(v, (0, 3, 0, 0))
+                v.w(PLANT + 0x90, count)
+                def fire(vm):
+                    sp = vm.reg(UC_X86_REG_ESP)
+                    self.assertEqual([vm.r(sp + i) for i in (4, 8, 12, 16)],
+                                     [PLANT, 0, 2, 0])
+                    vm.events.append('fire')
+                    vm.ret(16)
+                v.stubs[0x466E00] = fire
+                v.reg(UC_X86_REG_EAX, PLANT)
+                # Execute the challenge idle treatment and real native
+                # UpdateAbilities -> UpdateShooting, stopping after the call.
+                v.run(0x463150, 0x463245)
+                self.assertEqual(v.r(PLANT + 0x90), count - 1)
+                self.assertEqual(v.r(REANIM + 8), 0)
+                self.assertEqual(v.r(REANIM + 0xA0 + 8), 0x41900000)
+                self.assertEqual(v.events, ['fire'])
+
+    def test_bombs_stay_still_and_retain_native_flash_bookkeeping(self):
+        for seed in (2, 20):
+            v = self.vm(seed=seed)
+            v.w(PLANT + 0xC0, 0x3F800000)
+            v.w(PLANT + 0xC4, 0x3F800000)
+            v.w(PLANT + 0xB4, 8)
+            v.w(PLANT + 0xB8, 7)
+            v.w(PLANT + 0xBC, 6)
+            v.reg(UC_X86_REG_EAX, PLANT)
+            v.run(0x464DB0, 0x464E3C)
+            self.assertEqual(v.r(PLANT + 0xC0), 0)
+            self.assertEqual(v.r(PLANT + 0xC4), 0)
+            self.assertEqual([v.r(PLANT + off) for off in (0xB4, 0xB8, 0xBC)], [7, 6, 5])
+        for challenge, mode, seed in ((False, 70, 2), (True, 0, 20), (True, 70, 40)):
+            v = self.vm(mode, challenge, seed)
+            v.reg(UC_X86_REG_EAX, PLANT)
+            v.run(0x464DB0, 0x464DB6)
+            self.assertEqual(v.reg(UC_X86_REG_ESP), STACK - 4)
+            self.assertEqual(v.reg(UC_X86_REG_EDI), PLANT)
+            self.assertEqual(v.reg(UC_X86_REG_EAX), seed)
 
     def test_imitater_target_gets_setup_before_gray_filter(self):
         for challenge in (False, True):

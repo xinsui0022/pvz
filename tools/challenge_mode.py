@@ -8,7 +8,8 @@ the builder; strings and machine code remain in the executable read-only one.
 
 CHALLENGE_FIELD = 0xB4
 CHALLENGE_MAGIC = 0x365A4349
-CHALLENGE_STARTING_SUN = 3500
+CHALLENGE_STARTING_SUN = 150
+CHALLENGE_BUNGEE_COST = 125
 CHALLENGE_SAVE_MODE_OFFSET = 100
 SELECTOR_DIALOG_ID = 100
 PROFILE_DELETE_SAVE_NAME_RETURN = 0x4698DE
@@ -23,7 +24,7 @@ def add_challenge_mode(emit, patch, asm, symbols):
 
     header = label('iz_challenge_selector_header', '选择我是僵尸模式')
     body = label('iz_challenge_selector_body',
-                 '传统模式：沿用当前规则。\n挑战模式：开局3500阳光，随机高级植物。\n两种模式的存档分别保存。')
+                 '传统模式：沿用当前规则。\n挑战模式：开局150阳光，随机高级植物。\n两种模式的存档分别保存。')
     traditional = label('iz_challenge_selector_traditional', '传统模式')
     challenge = label('iz_challenge_selector_challenge', '挑战模式')
 
@@ -202,6 +203,10 @@ def add_challenge_mode(emit, patch, asm, symbols):
         pop edx
         pop ecx
         popfd
+        # The five overwritten bytes also include the native prologue's
+        # push EBX. Replay it before the following output-string load, whose
+        # stack offset assumes this saved register is already present.
+        push ebx
         jmp 0x4568ed
     ''')
     patch(0x4568E8, asm(f'jmp {save_name}', 0x4568E8), 5)

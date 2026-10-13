@@ -29,6 +29,9 @@ from challenge_mode import add_challenge_mode
 from challenge_generation import add_challenge_generation
 from challenge_plants import add_challenge_plants
 from challenge_economy import emit_sun_family, emit_double_sun_coin, add_challenge_economy
+from challenge_sunflowers import add_challenge_sunflowers
+from challenge_zombies import add_challenge_zombies
+from challenge_ice import add_challenge_ice
 
 ORIGINAL_SHA256 = '343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb'
 BASE = 0x400000
@@ -265,18 +268,21 @@ def build(original, challenge=True, _mutable_offset=None):
     add_fixes(emit, patch, asm, symbols, sun_family, sun_coin)
     reward_once = add_progression(emit, patch, asm)
     add_multi_boss(emit, patch, asm)
-    add_tactical(emit, patch, asm)
+    add_tactical(emit, patch, asm, challenge=challenge)
     add_v3(emit, patch, asm)
     add_v4(emit, patch, asm)
     recovery = add_v4_3(emit, patch, asm)
     boss_tick = add_v5(emit, patch, asm, symbols)
-    add_v4_1(emit, patch, asm, reward_once, recovery, boss_tick)
+    add_v4_1(emit, patch, asm, reward_once, recovery, boss_tick, sun_family)
     add_v4_2(emit, patch, asm)
     if challenge:
         add_challenge_mode(emit, patch, asm, symbols)
         add_challenge_plants(emit, patch, asm, symbols)
+        add_challenge_sunflowers(emit, patch, asm, symbols)
         add_challenge_generation(emit, patch, asm, symbols)
         add_challenge_economy(emit, patch, asm, sun_family, sun_coin)
+        add_challenge_ice(emit, patch, asm, symbols)
+        add_challenge_zombies(emit, patch, asm, symbols)
 
     # Existing footer buffer: GBK, NUL-terminated, 71 bytes plus terminator.
     # Reuse the same pointer/layout; pad the unused tail with NUL bytes.

@@ -1,5 +1,8 @@
 """Rear-emerging digger protection and persistent alternating bungee cost."""
-def add_tactical(emit, patch, asm):
+from challenge_mode import CHALLENGE_FIELD, CHALLENGE_MAGIC, CHALLENGE_BUNGEE_COST
+
+
+def add_tactical(emit, patch, asm, challenge=False):
     digger = emit('chomper_rear_digger', '''
         pushad
         cmp dword ptr [edi+0x28], 0
@@ -51,7 +54,14 @@ def add_tactical(emit, patch, asm):
     # and every original damage/phase/row check for the leader.
     patch(0x467729, asm(f'jmp {dancer}', 0x467729), 8)
 
-    price = emit('bungee_alternating_price', '''
+    challenge_price = (f'''
+        cmp dword ptr [ecx+{CHALLENGE_FIELD}], {CHALLENGE_MAGIC}
+        jne traditional_price
+        mov eax, {CHALLENGE_BUNGEE_COST}
+        ret
+    traditional_price:
+    ''' if challenge else '')
+    price = emit('bungee_alternating_price', f'''
         mov ecx, dword ptr [0x6a9ec0]
         cmp eax, 66
         jne original
@@ -65,6 +75,7 @@ def add_tactical(emit, patch, asm):
         mov ecx, dword ptr [ecx+0x160]
         test ecx, ecx
         jz fallback
+        {challenge_price}
         mov eax, dword ptr [ecx+0xb8]
         and eax, 1
         imul eax, eax, 50

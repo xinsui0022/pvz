@@ -6,7 +6,18 @@ No award/end flag is set until the grace period finishes, so input stays live.
 GRACE_MAGIC = 0x31475a49
 
 
-def add_v4_1(emit, patch, asm, reward_once, recovery, boss_tick):
+def add_v4_1(emit, patch, asm, reward_once, recovery, boss_tick, sun_family=None):
+    # Keep the original delay for challenge Twin Sunflowers too. The
+    # predicate preserves other registers; restore the live Plant* in EAX.
+    sun_check = (f'''push esi
+        mov esi, eax
+        push eax
+        call {sun_family}
+        test eax, eax
+        pop eax
+        pop esi
+        jz plant'''
+        if sun_family else 'cmp dword ptr [eax+0x24], 1; jne plant')
     gate = emit('completion_grace_start', f'''
         call {reward_once}
         pushfd
@@ -30,8 +41,7 @@ def add_v4_1(emit, patch, asm, reward_once, recovery, boss_tick):
         test al, al
         jz scan_zombies
         mov eax, dword ptr [esp]
-        cmp dword ptr [eax+0x24], 1
-        jne plant
+        {sun_check}
         cmp byte ptr [eax+0x142], 0
         jne plant
         cmp byte ptr [eax+0x144], 0

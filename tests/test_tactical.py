@@ -1,11 +1,14 @@
 import unittest
 from test_machine_code import VM, ORIGINAL, PATCHED, APP, BOARD, PLANT, ZOMBIE, CHALLENGE, STACK, STOP, REGS
 from test_machine_code import UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_EDX, UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP, UC_X86_REG_ESP
+from challenge_mode import CHALLENGE_FIELD, CHALLENGE_MAGIC
 
 class TacticalTests(unittest.TestCase):
-    def vm(self,mode=70):
+    def vm(self,mode=70,challenge=False):
         v=VM(mode=mode)
         v.w(0x6a9ec0,APP);v.w(BOARD+0x138,APP+0x9000)
+        v.w(BOARD+0x8c,APP)
+        v.w(CHALLENGE+CHALLENGE_FIELD,CHALLENGE_MAGIC if challenge else 0)
         v.w(APP+0x9028,66)
         return v
 
@@ -57,6 +60,50 @@ class TacticalTests(unittest.TestCase):
         v=self.vm();v.w(APP+0x768,0)
         self.assertEqual(self.price(v),125)
 
+    def test_bungee_card_and_shared_current_cost_follow_exact_mode_marker_and_parity(self):
+        for mode in (60,61,70,71):
+            for marker in (0,CHALLENGE_MAGIC^1,CHALLENGE_MAGIC):
+                for parity in (0,1,2,3):
+                    with self.subTest(mode=mode,marker=marker,parity=parity):
+                        v=self.vm(mode)
+                        v.w(CHALLENGE+CHALLENGE_FIELD,marker)
+                        v.w(CHALLENGE+0xb8,parity)
+                        iz=61<=mode<=70
+                        expected=125 if not iz or marker==CHALLENGE_MAGIC else 75+50*(parity&1)
+                        self.assertEqual(self.price(v),expected)
+                        self.assertEqual(self.price(v,current=True),expected)
+                        self.assertEqual(v.r(CHALLENGE+0xb8),parity)
+                        for seed,cost in ((65,125),(63,125),(60,50),(67,175)):
+                            self.assertEqual(self.price(v,seed),cost)
+                            self.assertEqual(self.price(v,seed,current=True),cost)
+
+    def cancelled(self,v):
+        # Execute the actual right-click branch of IZombieMouseDownWithZombie.
+        # Stub the cursor refresh; the native branch must never reach payment.
+        v.u.mem_map(0,0x1000)
+        v.u.mem_write(APP+0x8c5,b'\1') # Audio is muted in this cancellation path.
+        v.reg(UC_X86_REG_ESP,STACK);v.w(STACK,STOP)
+        for offset,value in ((4,CHALLENGE),(8,10),(12,20),(16,0xffffffff)):
+            v.w(STACK+offset,value)
+        v.stub(0x40cd80,'cancel_refresh')
+        v.run(0x42a210)
+        self.assertEqual(v.reg(UC_X86_REG_ESP),STACK+20)
+
+    def test_cancelled_bungee_keeps_money_parity_and_next_display_cost(self):
+        for challenge in (False,True):
+            for parity in (0,1):
+                with self.subTest(challenge=challenge,parity=parity):
+                    v=self.vm(challenge=challenge)
+                    v.w(CHALLENGE+0xb8,parity);v.w(BOARD+0x5560,150)
+                    expected=125 if challenge else 75+50*parity
+                    self.assertEqual(self.price(v),expected)
+                    self.cancelled(v)
+                    self.assertEqual(v.events,['cancel_refresh'])
+                    self.assertEqual(v.r(BOARD+0x5560),150)
+                    self.assertEqual(v.r(CHALLENGE+0xb8),parity)
+                    self.assertEqual(self.price(v),expected)
+                    self.assertEqual(self.price(v,current=True),expected)
+
     def test_successful_payment_places_then_toggles_and_failure_does_not(self):
         for money,parity,success in [(75,0,True),(74,0,False),(125,1,True),(124,1,False)]:
             v=self.vm();v.w(CHALLENGE+0xb8,parity);v.w(BOARD+0x5560,money)
@@ -73,6 +120,29 @@ class TacticalTests(unittest.TestCase):
             self.assertEqual(v.r(CHALLENGE+0xb8),parity^int(success))
             self.assertEqual('spawn' in v.events,success)
             self.assertEqual(v.r(BOARD+0x5560),0 if success else money)
+
+    def test_challenge_bungee_payment_requires_125_for_both_parities_and_stays_fixed(self):
+        for parity in (0,1):
+            for money in (75,124,125,250):
+                with self.subTest(parity=parity,money=money):
+                    v=self.vm(challenge=True)
+                    v.w(CHALLENGE+0xb8,parity);v.w(BOARD+0x5560,money)
+                    self.assertEqual(self.price(v),125)
+                    self.assertEqual(self.price(v,current=True),125)
+                    v.reg(UC_X86_REG_EBP,CHALLENGE);v.reg(UC_X86_REG_ESI,BOARD)
+                    v.reg(UC_X86_REG_ESP,STACK)
+                    v.stub(0x41b980,'count_sun',eax=0)
+                    v.stub(0x40cab0,'advice')
+                    v.stub(0x42a0f0,'spawn',pop=8)
+                    v.w(APP,APP+0xa000);v.w(APP+0xa0d8,0x800100)
+                    v.stub(0x800100,'failure_sound',pop=4)
+                    success=money>=125
+                    v.run(0x42a3bd,0x42a433 if success else 0x42a51a)
+                    self.assertEqual('spawn' in v.events,success)
+                    self.assertEqual(v.r(BOARD+0x5560),money-125 if success else money)
+                    self.assertEqual(v.r(CHALLENGE+0xb8),parity^int(success))
+                    self.assertEqual(self.price(v),125)
+                    self.assertEqual(self.price(v,current=True),125)
 
     def target(self,binary=PATCHED,mode=70,phase=33,col=0,x=0,plant=6,kind=17,biting=True,gap=None,eating=True):
         v=VM(binary,mode)

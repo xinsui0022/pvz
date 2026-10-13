@@ -7,7 +7,7 @@ from test_machine_code import (
     UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP, UC_X86_REG_ESP,
 )
 from challenge_mode import (
-    CHALLENGE_FIELD, CHALLENGE_MAGIC, CHALLENGE_STARTING_SUN,
+    CHALLENGE_FIELD, CHALLENGE_MAGIC,
     SELECTOR_DIALOG_ID, PROFILE_DELETE_SAVE_NAME_RETURN,
 )
 
@@ -69,6 +69,8 @@ class ChallengeModeTests(unittest.TestCase):
                     for off, expected in ((20, '传统模式'), (24, '挑战模式')):
                         text = expected.encode('gbk') + b'\0'
                         self.assertEqual(bytes(v.u.mem_read(v.r(sp + off), len(text))), text)
+                    body = bytes(v.u.mem_read(v.r(sp + 16), 192)).split(b'\0', 1)[0].decode('gbk')
+                    self.assertIn('开局150阳光', body)
                     v.events.append('mode_dialog')
                     # The dialog and its update loop can clobber volatile regs.
                     v.reg(UC_X86_REG_ECX, 0xABCDEF01)
@@ -134,14 +136,18 @@ class ChallengeModeTests(unittest.TestCase):
                 self.assertEqual(vm.r(CHALLENGE + 0xB8), 0)
 
     def test_initial_sun_hook_preserves_registers_and_traditional_balance(self):
-        for challenge in (False, True):
-            vm = self.vm(challenge=challenge)
-            vm.reg(UC_X86_REG_EBP, BOARD)
-            before = [vm.reg(r) for r in REGS]
-            vm.run(0x40B069, 0x40B073)
-            self.assertEqual(vm.r(BOARD + 0x5560), CHALLENGE_STARTING_SUN if challenge else 150)
-            self.assertEqual([vm.reg(r) for r in REGS], before)
-            self.assertEqual(vm.reg(UC_X86_REG_ESP), STACK)
+        for mode in (60, 61, 70, 71):
+            for marker in (0, CHALLENGE_MAGIC ^ 1, CHALLENGE_MAGIC):
+                with self.subTest(mode=mode, marker=marker):
+                    vm = self.vm(mode)
+                    vm.w(CHALLENGE + CHALLENGE_FIELD, marker)
+                    vm.w(BOARD + 0x5560, 999)
+                    vm.reg(UC_X86_REG_EBP, BOARD)
+                    before = [vm.reg(r) for r in REGS]
+                    vm.run(0x40B069, 0x40B073)
+                    self.assertEqual(vm.r(BOARD + 0x5560), 150)
+                    self.assertEqual([vm.reg(r) for r in REGS], before)
+                    self.assertEqual(vm.reg(UC_X86_REG_ESP), STACK)
 
     def save_mode(self, vm, mode):
         vm.reg(UC_X86_REG_ESP, STACK)
@@ -151,7 +157,8 @@ class ChallengeModeTests(unittest.TestCase):
         vm.run(0x4568E8, 0x4568ED)
         self.assertEqual(vm.reg(UC_X86_REG_ECX), 4)
         self.assertEqual(vm.reg(UC_X86_REG_EDX), 0x12345678)
-        self.assertEqual(vm.reg(UC_X86_REG_ESP), STACK)
+        self.assertEqual(vm.reg(UC_X86_REG_ESP), STACK - 4)
+        self.assertEqual(vm.r(STACK - 4), vm.reg(UC_X86_REG_EBX))
         return vm.reg(UC_X86_REG_EAX)
 
     def test_save_names_follow_live_marker_or_loading_selection_without_changing_game_mode(self):
@@ -196,7 +203,7 @@ class ChallengeModeTests(unittest.TestCase):
         vm.run(0x4698D0, 0x4568ED)
         self.assertEqual(vm.reg(UC_X86_REG_EAX), 70)
         self.assertEqual(vm.reg(UC_X86_REG_ECX), 7)
-        self.assertEqual(vm.r(vm.reg(UC_X86_REG_ESP) + 0x44),
+        self.assertEqual(vm.r(vm.reg(UC_X86_REG_ESP) + 0x48),
                          PROFILE_DELETE_SAVE_NAME_RETURN)
 
 

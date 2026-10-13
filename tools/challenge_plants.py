@@ -1,6 +1,6 @@
 """Challenge I, Zombie plant behavior, using verified 1.0.0.1051 ABIs.
 
-The traditional puzzle still uses its native cardboard setup and updates.
+Both puzzles use the native cardboard drawing and idle animation treatment.
 Challenge plants keep native weapons/armor; only reactive explosives change.
 PuzzleNextStageClear already kills all grid items, including doom craters.
 """
@@ -46,56 +46,54 @@ def add_challenge_plants(emit, patch, asm, symbols):
         ret
     ''')
 
-    # These call sites only choose the cardboard drawing/idle animation
-    # treatment. Production-plant and reward predicates retain IZ behavior.
-    cosmetic = emit('challenge_plant_cosmetic_predicate', f'''
-        push ecx
-        push edx
-        mov edx, dword ptr [eax+0x768]
-        test edx, edx
-        jz original
-        cmp dword ptr [eax+0x7f8], 61
-        jb original
-        cmp dword ptr [eax+0x7f8], 70
-        ja original
-        mov edx, dword ptr [edx+0x160]
-        test edx, edx
-        jz original
-        cmp dword ptr [edx+0xb4], {CHALLENGE_MAGIC}
-        jne original
-        pop edx
-        pop ecx
-        xor eax, eax
-        ret
-    original:
-        pop edx
-        pop ecx
-        jmp 0x4537d0
+    # Leave the native IZ predicates (including the inlined magnet check)
+    # intact. IZombieDrawPlant draws the actual body and its attachments;
+    # it has no seed-type whitelist, so upgrades receive the same outline.
+    native_setup = emit('challenge_native_plant_setup', '''
+        mov ecx, dword ptr [eax]
+        mov edx, dword ptr [ecx+0x820]
+        jmp 0x42a538
     ''')
-    for site in COSMETIC_PREDICATE_SITES:
-        patch(site, asm(f'call {cosmetic}', site))
 
-    # One magnet idle-freeze check is inlined in the original executable.
-    magnet = emit('challenge_magnet_idle', f'''
+    # Old challenge saves contain moving idle reanimations. Freeze only
+    # looping idle layers, preserving one-shot shooting/magnet/chomper/
+    # imitater animations whose loopCount drives native combat transitions.
+    # EAX=Plant*, preserve every register and flags, never reset combat state.
+    idle = emit('challenge_cardboard_idle', '''
         pushfd
         pushad
-        mov eax, ebx
-        call {scope}
-        test al, al
-        jz original
+        mov ebp, eax
+        mov dword ptr [ebp+0xb0], 0
+        cmp dword ptr [ebp+0xa4], 0
+        je layers
+        mov esi, ebp
+        call 0x464390
+    layers:
+        lea esi, [ebp+0x94]
+        mov edi, 4
+    next:
+        mov ecx, dword ptr [esi]
+        test ecx, ecx
+        jz advance
+        mov eax, dword ptr [ebp]
+        call 0x453cb0
+        test eax, eax
+        jz advance
+        cmp dword ptr [eax+0x10], 0
+        jne advance
+        mov dword ptr [eax+8], 0
+    advance:
+        add esi, 4
+        dec edi
+        jnz next
         popad
         popfd
-        jmp 0x461f07
-    original:
-        popad
-        popfd
-        mov esi, dword ptr [ebx+0x94]
-        jmp 0x461ebf
+        ret
     ''')
-    patch(0x461EB9, asm(f'jmp {magnet}', 0x461EB9), 6)
 
-    # EAX=Challenge*, stack Plant*, ret4. PlantInitialize already created
-    # each real native reanimation. Avoid zeroing body/head animation rates.
+    # EAX=Challenge*, stack Plant*, ret4. Wake mushrooms and arm the custom
+    # explosives first, then execute native IZ setup to freeze all four
+    # body/head layers, arm potato mines and suppress blinking.
     setup = emit('challenge_plant_setup', f'''
         pushfd
         pushad
@@ -107,18 +105,6 @@ def add_challenge_plants(emit, patch, asm, symbols):
         push 0
         mov eax, ebp
         call 0x45e860
-        mov eax, dword ptr [ebp+0x24]
-        cmp eax, 4
-        jne explosive_check
-        push 0x41400000
-        push 0
-        push 0x657230
-        xor ecx, ecx
-        mov eax, ebp
-        call 0x45fd90
-        mov dword ptr [ebp+0x3c], 16
-        mov dword ptr [ebp+0x54], 0
-    explosive_check:
         mov eax, dword ptr [ebp+0x24]
         cmp eax, 2
         je waiting_bomb
@@ -150,8 +136,10 @@ def add_challenge_plants(emit, patch, asm, symbols):
         mov dword ptr [ebp+0x50], 0
         mov dword ptr [ebp+0x3c], 0
     refresh:
-        mov ebx, ebp
-        call 0x463920
+        mov eax, dword ptr [ebp+4]
+        mov eax, dword ptr [eax+0x160]
+        push ebp
+        call {native_setup}
         popad
         popfd
         ret 4
@@ -298,6 +286,8 @@ def add_challenge_plants(emit, patch, asm, symbols):
         call {scope}
         test al, al
         jz original
+        mov eax, ebp
+        call {idle}
         mov eax, dword ptr [ebp+0x24]
         cmp eax, 2
         je explosive
@@ -341,6 +331,39 @@ def add_challenge_plants(emit, patch, asm, symbols):
         jmp 0x463155
     ''')
     patch(0x463150, asm(f'jmp {update}', 0x463150), 5)
+
+    # Cherry/jalapeno Animate normally shakes their matrix every tick even
+    # when the reanimation rate is zero. Armed cardboard bombs remain still;
+    # continue at the native eaten-flash/damage/blink updates, not an early
+    # return that would skip the plant's other visual bookkeeping.
+    animate = emit('challenge_bomb_cardboard_animate', f'''
+        pushfd
+        pushad
+        mov ebp, eax
+        call {scope}
+        test al, al
+        jz original
+        cmp dword ptr [ebp+0x24], 2
+        je still
+        cmp dword ptr [ebp+0x24], 20
+        jne original
+    still:
+        mov dword ptr [ebp+0xc0], 0
+        mov dword ptr [ebp+0xc4], 0
+        popad
+        popfd
+        push edi
+        mov edi, eax
+        jmp 0x464e03
+    original:
+        popad
+        popfd
+        push edi
+        mov edi, eax
+        mov eax, dword ptr [edi+0x24]
+        jmp 0x464db6
+    ''')
+    patch(0x464DB0, asm(f'jmp {animate}', 0x464DB0), 6)
 
     # Awake instant mushrooms normally cannot be chewed. Skip that native
     # immunity and the stock ice-shroom immediate-on-first-bite branch only
