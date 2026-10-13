@@ -1,6 +1,8 @@
 """Second-pass x86 hooks. All gameplay additions are scoped to I, Zombie."""
-def add_fixes(emit, patch, asm, symbols):
-    damage = emit('projectile_damage', '''
+def add_fixes(emit, patch, asm, symbols, sun_family=None, sun_coin=None):
+    sun_guard = (f'push eax; call {sun_family}; test eax, eax; pop eax; jz apply_damage'
+                 if sun_family else 'cmp dword ptr [esi+0x24], 1; jne apply_damage')
+    damage = emit('projectile_damage', f'''
         pushfd
         pushad
         mov ebp, esp
@@ -12,8 +14,7 @@ def add_fixes(emit, patch, asm, symbols):
         call 0x4537d0
         test al, al
         jz apply_damage
-        cmp dword ptr [esi+0x24], 1
-        jne apply_damage
+        {sun_guard}
         cmp byte ptr [esi+0x141], 0
         jne apply_damage
         cmp byte ptr [esi+0x142], 0
@@ -47,7 +48,7 @@ def add_fixes(emit, patch, asm, symbols):
         add eax, ebx
         push eax
         mov ecx, dword ptr [esi+4]
-        call 0x40cb10
+        call {sun_coin or 0x40cb10}
         add ebx, 5
         dec edi
         jnz coin_loop

@@ -25,6 +25,10 @@ from v4_1_fixes import add_v4_1
 from v4_2_fixes import add_v4_2
 from v4_3_fixes import add_v4_3
 from v5_fixes import add_v5
+from challenge_mode import add_challenge_mode
+from challenge_generation import add_challenge_generation
+from challenge_plants import add_challenge_plants
+from challenge_economy import emit_sun_family, emit_double_sun_coin, add_challenge_economy
 
 ORIGINAL_SHA256 = '343c8edef1687a742b3420fba6d69c82b6b7baeca32a28bd365bdbb7b6d94dbb'
 BASE = 0x400000
@@ -39,7 +43,7 @@ def sha(data):
 def align(n, a):
     return (n + a - 1) // a * a
 
-def build(original):
+def build(original, challenge=True, _mutable_offset=None):
     if sha(original) != ORIGINAL_SHA256:
         raise ValueError('Unsupported executable SHA-256; refusing to patch.')
     pe = pefile.PE(data=original)
@@ -47,10 +51,20 @@ def build(original):
     section_va = BASE + align(pe.OPTIONAL_HEADER.SizeOfImage, 0x1000)
     section_offset = align(len(data), pe.OPTIONAL_HEADER.FileAlignment)
     code = bytearray()
+    mutable = bytearray()
+    mutable_va = section_va + (0x10000 if _mutable_offset is None else _mutable_offset)
     symbols = {}
     changes = []
 
     def emit(name, source):
+        # The selector owns two transient words. Keep them on a separate RW,
+        # non-executable page instead of making the patch's code writable.
+        if name in ('iz_challenge_selection_pending', 'iz_challenge_selection_loading'):
+            mutable.extend(b'\0' * (align(len(mutable), 4) - len(mutable)))
+            va = mutable_va + len(mutable)
+            symbols[name] = va
+            mutable.extend(asm(source, va))
+            return va
         code.extend(b'\xCC' * (align(len(code), 16) - len(code)))
         va = section_va + len(code)
         symbols[name] = va
@@ -246,7 +260,9 @@ def build(original):
     ''')
     patch(0x535d43, asm(f'call {ball_crush}', 0x535d43))
 
-    add_fixes(emit, patch, asm, symbols)
+    sun_family = emit_sun_family(emit) if challenge else None
+    sun_coin = emit_double_sun_coin(emit, sun_family) if challenge else None
+    add_fixes(emit, patch, asm, symbols, sun_family, sun_coin)
     reward_once = add_progression(emit, patch, asm)
     add_multi_boss(emit, patch, asm)
     add_tactical(emit, patch, asm)
@@ -256,12 +272,23 @@ def build(original):
     boss_tick = add_v5(emit, patch, asm, symbols)
     add_v4_1(emit, patch, asm, reward_once, recovery, boss_tick)
     add_v4_2(emit, patch, asm)
+    if challenge:
+        add_challenge_mode(emit, patch, asm, symbols)
+        add_challenge_plants(emit, patch, asm, symbols)
+        add_challenge_generation(emit, patch, asm, symbols)
+        add_challenge_economy(emit, patch, asm, sun_family, sun_coin)
 
     # Existing footer buffer: GBK, NUL-terminated, 71 bytes plus terminator.
     # Reuse the same pointer/layout; pad the unused tail with NUL bytes.
     caption = '由心都灬碎了提供，QQ：3389141'.encode('gbk')
     assert len(caption) < 72
     patch(0x65124a, caption + b'\0' * (72-len(caption)))
+
+    # Windows requires adjacent aligned section VAs. The first pass measures
+    # code; rebuild once with the selector page immediately after it so all
+    # assembled absolute pointers are correct and no virtual gap is created.
+    if mutable and _mutable_offset != align(len(code), 0x1000):
+        return build(original, challenge=challenge, _mutable_offset=align(len(code), 0x1000))
 
     # Explicit executable section, rather than depending on unmapped padding.
     header = pe.sections[-1].get_file_offset() + 40
@@ -284,6 +311,24 @@ def build(original):
     data.extend(b'\0'*(section_offset-len(data)))
     data.extend(code)
     data.extend(b'\0'*(raw_size-len(code)))
+    if mutable:
+        assert len(code) <= _mutable_offset, 'Patch code overlaps selector data'
+        mutable_header = header + 40
+        assert mutable_header + 40 <= pe.OPTIONAL_HEADER.SizeOfHeaders
+        assert data[mutable_header:mutable_header+40] == b'\0' * 40
+        mutable_offset = align(len(data), pe.OPTIONAL_HEADER.FileAlignment)
+        mutable_raw_size = align(len(mutable), pe.OPTIONAL_HEADER.FileAlignment)
+        data[mutable_header:mutable_header+40] = struct.pack('<8sIIIIIIHHI', b'.izdata\0',
+            len(mutable), mutable_va-BASE, mutable_raw_size, mutable_offset,
+            0, 0, 0, 0, 0xC0000040)
+        struct.pack_into('<H', data, pe.FILE_HEADER.get_field_absolute_offset('NumberOfSections'), len(pe.sections)+2)
+        struct.pack_into('<I', data, pe.OPTIONAL_HEADER.get_field_absolute_offset('SizeOfImage'),
+                         align(mutable_va-BASE+len(mutable), 0x1000))
+        struct.pack_into('<I', data, pe.OPTIONAL_HEADER.get_field_absolute_offset('SizeOfInitializedData'),
+                         pe.OPTIONAL_HEADER.SizeOfInitializedData+mutable_raw_size)
+        data.extend(b'\0' * (mutable_offset-len(data)))
+        data.extend(mutable)
+        data.extend(b'\0' * (mutable_raw_size-len(mutable)))
     updated = pefile.PE(data=bytes(data))
     struct.pack_into('<I', data, updated.OPTIONAL_HEADER.get_field_absolute_offset('CheckSum'), updated.generate_checksum())
     return bytes(data), {'original_sha256': ORIGINAL_SHA256, 'patched_sha256': sha(data),
@@ -294,12 +339,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path, default=ROOT/'backups/PlantsVsZombies.original.exe')
     parser.add_argument('--output', type=Path, default=ROOT/'backups/PlantsVsZombies.patched.exe')
+    parser.add_argument('--traditional', action='store_true', help='Rebuild the backed-up traditional baseline without challenge hooks')
+    parser.add_argument('--package-dir', type=Path, default=ROOT/'patches', help='Directory for the reversible patch package and manifest')
     args = parser.parse_args()
-    patched, manifest = build(args.input.read_bytes())
+    patched, manifest = build(args.input.read_bytes(), challenge=not args.traditional)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(patched)
-    (ROOT/'patches').mkdir(exist_ok=True)
-    (ROOT/'patches/manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
+    args.package_dir.mkdir(parents=True, exist_ok=True)
+    (args.package_dir/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     original = args.input.read_bytes()
     changes=[]
     i=0
@@ -314,7 +361,7 @@ def main():
             'after':base64.b64encode(patched[start:i]).decode()})
     package={k:manifest[k] for k in ('original_sha256','patched_sha256')}
     package.update(original_size=len(original),patched_size=len(patched),changes=changes)
-    (ROOT/'patches/izombie-fixes.json').write_text(json.dumps(package,indent=2)+'\n')
+    (args.package_dir/'izombie-fixes.json').write_text(json.dumps(package,indent=2)+'\n')
     print(json.dumps(manifest, indent=2))
 
 if __name__ == '__main__':
